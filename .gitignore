@@ -1,0 +1,9 @@
+node_modules/
+web/dist/
+internal/webui/dist/
+test-results/
+playwright-report/
+*.exe
+.env
+__pycache__/
+*.pyc

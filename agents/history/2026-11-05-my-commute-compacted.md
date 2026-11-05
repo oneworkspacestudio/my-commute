@@ -1,0 +1,40 @@
+# My Commute candidate — 5 November 2026
+
+## Scope and decisions
+Created a separate unpublished Git app for London bus, Tube, Overground, Elizabeth line, DLR and National Rail journeys. The aggregate workspace is unborn and must not be staged. No owner installation or credentials were used, and no commit, push, Actions workflow or release was authorized. Managed integration lives in the isolated `workspace-my-commute` worktree, based on Workspace main 1f505e0.
+
+Mobile-first AUI source compiles to React; keep UI changes in `web/src/screens/Dashboard.aui`. Go/apphost embeds the UI, uses private per-account SQLite state and managed MyAccounts OIDC. Local preview accounts are loopback-only. Provider credentials are owner-only, server-side and never returned. GPS is opt-in, page-memory only, with freshness/accuracy checks and manual direction override.
+
+Journey engine uses fresh provider predictions, walking estimates, saved ride durations, interchange walks and boarding buffers. Separate outward/return legs, alternative buses at a stop, all returned departures and cancellation/unknown statuses are supported. Missing upstream connections prevent invented downstream recommendations. The Highbury–Oxford Circus example is labelled; the user's actual route is not known. Ride durations are configurable estimates, not traffic-aware routing.
+
+TfL calls were tested live. Darwin requires a user-supplied token and remains unverified against a credentialed live feed. The official 2021-11-01 OpenLDBWS WSDL uses the **2015-05-14** SOAPAction for GetDepBoardWithDetails; retain this distinction. Synthetic tests cover request shape, midnight, calling points and cancellations.
+
+## Verification
+- UI production build and strict controller/engine TypeScript passed.
+- Nine journey-engine tests passed; native Go tests and vet passed.
+- Eight Playwright scenarios passed on the final native executable: live TfL, 320–1440px layouts, saved both-direction journeys, denied GPS/feed outage/missing Darwin token, direction inference/manual override, per-account isolation/CSRF/owner writes, and a synthetic bus→Tube transfer with platform wait.
+- Screenshots in `docs/screenshots/`; connection screenshot is deliberately synthetic. Physical Android/iOS and clean-host reboot are not claimed.
+- Final executable SHA-256: 42da8c83dadf9df1dfd5e483c7434aaa797be363e0b3d8d5251ba9fee9673eb1.
+- Local artifact root: `I:/Projects/tooling/my-commute-20261105`; `delivery/` contains executable ZIP, source ZIP, third-party licences and verification receipt. Source commit is null and candidate flag true.
+
+## Managed delivery
+App ID commute, route /commute, port 9040 (managed base+50), optional General app, private `${DATA}/commute`, no sidecar. Integration 9 gates old controllers. Suite registry, selection, storage, OIDC/sign-out, picker branding, independent updates/recovery, strict package namespace and candidate build/publication guards are implemented. No public lock pin was fabricated. Full builder validated 38 managed apps. Final isolated native fresh/upgrade/update/rollback acceptance passed; see final evidence below.
+
+Public organization repository, release/channel promotion and owner-PC installation remain pending. Suite publication must use its signed-Android entry point with Actions disabled. Never replace immutable public assets.
+
+## Later verification and corrections
+A user-specific route was prepared in a protected NTFS import file outside Git and shared artifacts. Do not use that personal file as a software fixture or copy its contents into history. The app source remains generic. Imports are server-validated previews with new IDs; saving is explicit. Alternative Tube lines are selectable by checkbox and can use a shared physical platform, avoiding inconsistent inbound/outbound labels between lines. Exact stop lookup now resolves nested TfL hub children so the selected road-side/platform ID is retained. Synthetic regression coverage added.
+
+Native managed fresh opt-in/opt-out and upgrade from preview.113 passed on an intermediate candidate. Its app-only update exposed a real app bug: calling Migrate(1) and Migrate(2) unconditionally rejects an existing version-2 database on restart. Fixed by querying the current schema and applying only missing steps, while rejecting future schemas. Tests cover empty/v1/v2/v3 databases, preservation and a real native process restart; all eight browser scenarios now pass. Do not use the intermediate candidate as final recovery evidence. Final ordinary build is `suite-ready/`, using the corrected `delivery/` package. The managed acceptance script passed against that build, including fresh restart, saved journey preservation, app update and rollback. Earlier completed/partial build folders are superseded local candidates.
+
+## Final evidence and handoff
+Final artifact: `delivery/MyCommute-windows-amd64-candidate.zip`, SHA-256 b8a2c5a46a45236c9deac4a66ffadd50b791ac46a920acfe38c44a3c62853b90. Executable SHA above is final. Complete managed candidate: `suite-ready/WorkspaceSetup-windows-amd64.exe` and `workspace-bundle.zip`; 38 apps, 498 packages (47 Commute) all hashes verified. The final linker ran out of temporary C: space; only abandoned task build files were removed, and the identical final build command was resumed using I: temporary storage. The ordinary catalogue audit passed again; managed-build.json explicitly records the resumed link.
+
+Final `docs/evidence/managed-acceptance.json` is passed=true: fresh selection, fresh process restart, opt-out, upgrade from exact preview.113, MyAccounts identity/shared picker/icon/bare route, anonymous denial and geolocation policy, independent update to synthetic preview.2-test, rollback to preview.1, and saved journey/preferences preservation. Accounts program bytes and owner/issuer remained unchanged. The earlier migration failure is superseded by this successful run. Synthetic runtime processes were stopped; fixtures are disposable task data, not owner installations. Physical phone/reboot and credentialed Darwin remain untested. No public repository/release/channel, commit/push or owner installation occurred.
+
+Source and managed integration are ready for review. If publication is explicitly requested, first reconcile current organization main and other app work, create the actual app repository/pin, use the mandatory signed-Android publication path, keep Actions disabled and verify each installed target separately. Never promote candidate metadata or overwrite immutable release assets. The user-specific prepared route remains in protected local storage outside Git; do not use it as test data or publish it.
+
+Cleanup completed: stopped synthetic NTFS accounts/data and their replaceable program directories were removed; superseded task candidates and abandoned build temporaries were removed. The final delivery, final managed installer, source and evidence remain. The user’s separate protected prepared journey file was preserved.
+
+## Installation follow-up
+The user subsequently requested installation on both Workspace machines and a retry. Managed distribution is being prepared under the required lifecycle. Suite integration is rebased onto main08e175d, retaining News/Finance and the startup progress fix. The combined catalog requires manager116/integration10. Release packaging now supports a clean committed source archive; prior candidate acceptance remains historical. Public release/channel and each owner installation must still be verified separately. Personal journey configuration remains outside Git.

@@ -1,0 +1,1 @@
+Use repository-history. UI trees are authored in web/src/screens/*.aui and compiled; never edit generated output. Use synthetic isolated NTFS data, never an owner installation. Keep credentials server-side and predictions honest. No GitHub Actions or publication without task authorization.

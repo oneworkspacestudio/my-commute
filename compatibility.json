@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "id": "commute",
+  "version": "0.1.0-preview.1",
+  "route": "/commute",
+  "oidc": true,
+  "singleExecutable": true,
+  "minimumWorkspaceVersion": "0.3.0-preview.116",
+  "workspaceInstallerIntegration": 10,
+  "capabilities": [
+    "native-commute-v1"
+  ]
+}

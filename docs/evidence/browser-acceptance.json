@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "executableSHA256": "42da8c83dadf9df1dfd5e483c7434aaa797be363e0b3d8d5251ba9fee9673eb1",
+  "browser": "Microsoft Edge, headless Playwright",
+  "passed": 8,
+  "viewports": [
+    320,
+    390,
+    768,
+    1440
+  ],
+  "checks": [
+    "actual TfL arrivals and responsive layout",
+    "actual stop search and persisted outward/return journeys",
+    "location denial, unavailable feed and missing Darwin credentials",
+    "location direction inference and manual override",
+    "account isolation, CSRF and owner-only provider writes",
+    "synthetic bus-to-Tube connection with earlier arrivals retained and platform wait",
+    "private import preview does not save until explicit action; alternative Tube services persist",
+    "native process restart preserves journeys and preferences"
+  ],
+  "physicalPhone": false,
+  "credentialedDarwin": false,
+  "ownerInstallation": false
+}

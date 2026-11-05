@@ -1,0 +1,268 @@
+Page Dashboard
+  Row variant=topbar
+    Row gap=sm
+      Image src="./commute.svg" alt="" width=38 height=38
+      Stack gap=none
+        Text variant=brand "My Commute"
+        Text variant=eyebrow "LONDON, CONNECTED"
+    Row gap=sm
+      Badge tone=neutral "London $time"
+      Link href="/" variant=apps "Apps"
+  Row variant=workspace
+    Section variant=sidebar
+      Text variant=eyebrow "YOUR EVERYDAY, SIMPLIFIED"
+      Button variant=$todayVariant intent=today icon=route "Your journey"
+      Button variant=$boardVariant intent=board icon=clock "Live departures"
+      Button variant=$statusVariant intent=status icon=activity "Network status"
+      Button variant=$savedVariant intent=saved icon=bookmark "Saved journeys"
+      Spacer
+      Card variant=sidebar-note
+        Icon name=map-pin
+        Heading level=3 "Made for London."
+        Text "Bus, Tube and rail. One connected journey."
+      Button variant=$settingsVariant intent=settings icon=settings "Preferences"
+    Stack variant=main
+      If condition=$error
+        Alert tone=warning role=alert "$error"
+      If condition=$loading
+        Alert tone=info "Connecting to your Workspace account…"
+      If condition=$signedOut
+        Card variant=welcome
+          Heading level=1 "Your London. Your way."
+          Text "Sign in with MyAccounts to save your journeys and connect your live buses, Tube and trains."
+          If condition=$localLogin
+            Text variant=muted "$localLoginDescription"
+            Input name=email value=$email type=email label="Email" autoComplete=username
+            Input name=password value=$password type=password label="Password" autoComplete=current-password
+            Button intent=login variant=primary "$localLoginLabel"
+          Else
+            Link href=$loginURL variant=primary "Sign in with MyAccounts"
+      Else
+        Row variant=page-heading
+          Stack gap=sm
+            Text variant=eyebrow "$date · LONDON"
+            Heading level=1 "$title"
+            Text variant=muted "$subtitle"
+          Button intent=refresh variant=quiet icon=refresh disabled=$busy "$refreshLabel"
+        If condition=$example
+          Alert tone=info "Example journey · Real TfL arrivals, with illustrative walking and ride times. Add your own commute to personalise it."
+        If condition=$showJourney
+          Row variant=journey-controls
+            Select name=journey value=$journeyId options=$journeyOptions label="Saved journey"
+            Row variant=segmented
+              Button intent=outbound variant=$outboundVariant icon=briefcase "To work"
+              Button intent=inbound variant=$inboundVariant icon=home "Going home"
+          Row variant=location-strip
+            Icon name=map-pin
+            Text "$locationLabel"
+            Button intent=locate variant=text "$locationButton"
+          If condition=$directionSuggestion
+            Alert tone=info "$directionSuggestion"
+          If condition=$emptyDirection
+            Card variant=welcome
+              Icon name=route
+              Heading level=2 "Let’s connect your journey"
+              Text "Add the stops and services you use, in travel order. Save each direction separately so you always get the right side of the road."
+              Button intent=edit variant=primary icon=plus "Set up this direction"
+          Else
+            Grid variant=journey-grid
+              Stack gap=lg
+                Card variant=hero
+                  Row variant=spread
+                    Badge tone=mint "$heroBadge"
+                    Icon name=arrow-up-right
+                  Text variant=hero-kicker "$heroKicker"
+                  Heading level=2 "$heroTitle"
+                  Text variant=hero-copy "$heroCopy"
+                  Row variant=hero-stats
+                    Stack gap=xs
+                      Text variant=stat-label "LEAVE BY"
+                      Text variant=stat-value "$leaveBy"
+                    Stack gap=xs
+                      Text variant=stat-label "EST. AT DESTINATION"
+                      Text variant=stat-value "$arriveBy"
+                    Stack gap=xs
+                      Text variant=stat-label "PLATFORM WAIT"
+                      Text variant=stat-value "$platformWait"
+                  Text variant=hero-foot "$estimateNote"
+                Card variant=timeline
+                  Row variant=spread
+                    Heading level=2 "Your journey, connected"
+                    Button intent=edit variant=text icon=pencil "Edit"
+                  For each=$steps
+                    Row variant=step
+                      Icon name=$item.icon tone=$item.tone
+                      Stack gap=sm
+                        Text variant=eyebrow "$item.walkLabel"
+                        Row variant=spread
+                          Heading level=3 "$item.title"
+                          Badge tone=$item.tone "$item.time"
+                        Text variant=muted "$item.detail"
+                        Text variant=connection "$item.connection"
+                        Button intent=startHere payload=$item.index variant=text "Start from this stop"
+                  Row variant=destination
+                    Icon name=flag
+                    Stack gap=xs
+                      Text variant=strong "$destination"
+                      Text variant=muted "$finalWalkLabel"
+              Stack gap=lg
+                Card
+                  Row variant=spread
+                    Heading level=2 "Next at your stop"
+                    Badge tone=$feedTone "$feedLabel"
+                  Text variant=muted "$firstStop"
+                  For each=$nextArrivals
+                    Row variant=arrival
+                      Badge tone=$item.tone "$item.line"
+                      Stack gap=xs
+                        Text variant=strong "$item.destination"
+                        Text variant=muted "$item.detail"
+                      Stack variant=arrival-time
+                        Text variant=countdown "$item.minutes"
+                        Text variant=muted "$item.clock"
+                  If condition=$noNextArrivals
+                    Text variant=empty "$firstBoardMessage"
+                  Button intent=board variant=wide icon=arrow-right "See all departures"
+                Card variant=insight
+                  Icon name=sparkles
+                  Heading level=3 "A little breathing room."
+                  Text "$bufferNote"
+                  Button intent=settings variant=text "Adjust your preferences"
+                Card variant=data-note
+                  Text variant=eyebrow "LIVE DATA, HONEST ESTIMATES"
+                  Text "$updatedLabel"
+                  Text "Connections use your walking and ride estimates. Check the vehicle destination and station boards before boarding."
+        If condition=$showBoard
+          Row variant=journey-controls
+            Select name=journey value=$journeyId options=$journeyOptions label="Saved journey"
+            Row variant=segmented
+              Button intent=outbound variant=$outboundVariant "To work"
+              Button intent=inbound variant=$inboundVariant "Going home"
+          For each=$boards
+            Card variant=board
+              Row variant=spread
+                Stack gap=sm
+                  Text variant=eyebrow "$item.label"
+                  Heading level=2 "$item.name"
+                Badge tone=$item.tone "$item.state"
+              Text variant=muted "$item.filter"
+              For each=$item.rows
+                Row variant=arrival
+                  Badge tone=$item.tone "$item.line"
+                  Stack gap=xs
+                    Text variant=strong "$item.destination"
+                    Text variant=muted "$item.detail"
+                  Stack variant=arrival-time
+                    Text variant=countdown "$item.minutes"
+                    Text variant=muted "$item.clock"
+              Text variant=muted "$item.message"
+        If condition=$showStatus
+          Text variant=muted "Live TfL line status, including disruption details."
+          For each=$statuses
+            Card variant=status-card
+              Row variant=spread
+                Row gap=md
+                  Icon name=train tone=$item.tone
+                  Heading level=3 "$item.name"
+                Badge tone=$item.tone "$item.status"
+              Text variant=muted "$item.reason"
+          If condition=$noStatus
+            Card
+              Text "$statusMessage"
+        If condition=$showSaved
+          Button intent=new variant=primary icon=plus "Add a journey"
+          FileInput label="Import prepared journey"
+          If condition=$noSaved
+            Card variant=welcome
+              Icon name=bookmark
+              Heading level=2 "Make the everyday easier"
+              Text "Save your commute once. Get the buses and trains you can catch, every day."
+          For each=$savedJourneys
+            Card
+              Row variant=spread
+                Stack gap=sm
+                  Heading level=2 "$item.name"
+                  Text variant=muted "$item.description"
+                Button intent=openJourney payload=$item.id variant=primary "Open"
+              Row gap=sm
+                Button intent=editJourney payload=$item.id variant=text icon=pencil "Edit journey"
+                Button intent=deleteJourney payload=$item.id variant=danger icon=trash "Delete"
+        If condition=$showSettings
+          Card variant=settings
+            Heading level=2 "Travel at your pace"
+            Text variant=muted "Used to choose connections you can realistically make. All durations are in minutes."
+            Input name=buffer type=number min=1 max=15 value=$buffer label="Boarding safety buffer"
+            Select name=walkSpeed value=$walkSpeed label="Walking pace" options=$walkOptions
+            Input name=finalWalk type=number min=0 max=60 value=$finalWalk label="Walk from your last stop to your destination"
+            Button intent=savePreferences variant=primary "Save preferences"
+          Card
+            Heading level=2 "Your data & location"
+            Text "Journeys are saved privately to your Workspace account. Location is requested only when you tap Use my location. It stays in this page and expires after two minutes."
+            Text "$railAvailability"
+            Link href="https://tfl.gov.uk" target="_blank" "Powered by Transport for London open data"
+            Link href="https://www.nationalrail.co.uk/developers/darwin-data-feeds/" target="_blank" "National Rail Darwin information"
+            Button intent=logout variant=text "Sign out"
+          If condition=$isOwner
+            Card variant=settings
+              Heading level=2 "Connect transport data"
+              Text variant=muted "TfL works without a key within its public limits. Add your credentials to enable National Rail or your TfL subscription. Existing keys stay unchanged when left blank."
+              Input name=providerKey value=$providerKey type=password label="TfL API key (optional)" autoComplete=off
+              Input name=providerRail value=$providerRail type=password label="National Rail Darwin token" autoComplete=off
+              Button intent=saveProviders variant=primary "Save data connections"
+        If condition=$showEditor
+          Card variant=editor
+            Row variant=spread
+              Heading level=2 "$editorTitle"
+              Button intent=cancelEdit variant=quiet "Cancel"
+            Input name=journeyName value=$editName label="Journey name" placeholder="My work commute" maxLength=80
+            Row variant=segmented
+              Button intent=editOutbound variant=$editOutboundVariant icon=briefcase "To work"
+              Button intent=editInbound variant=$editInboundVariant icon=home "Going home"
+            Text variant=muted "Add legs in travel order. Each direction needs its own stops, platforms and destinations."
+            For each=$editLegs
+              Row variant=edit-leg
+                Icon name=$item.icon
+                Stack gap=xs
+                  Text variant=strong "$item.title"
+                  Text variant=muted "$item.detail"
+                Button intent=editLeg payload=$item.id variant=quiet icon=pencil "Edit"
+                Button intent=removeLeg payload=$item.id variant=danger icon=trash "Remove"
+            Divider
+            Heading level=3 "$legEditorTitle"
+            Select name=mode value=$editMode label="Transport" options=$modeOptions
+            Input name=search value=$search label="Find your boarding stop or station" placeholder="e.g. Highbury, Brixton, Waterloo" maxLength=100
+            Button intent=searchStops variant=wide icon=search disabled=$searching "$searchLabel"
+            For each=$stopResults
+              Button intent=chooseStop payload=$item.id variant=search-result "$item.label"
+            If condition=$selectedStop
+              Alert tone=info "$selectedStop"
+            If condition=$editRail
+              Input name=crs value=$editCrs label="Departure station code (CRS)" placeholder="e.g. WAT" maxLength=3
+              Input name=toCrs value=$editToCrs label="Destination station code (CRS)" placeholder="e.g. CLJ" maxLength=3
+              Text variant=muted "Choose the boarding station above to enable location suggestions. National Rail uses three-letter station codes. Live boards need a configured Darwin token."
+            Else
+              Select name=line value=$editLine label="Bus route or line" options=$lineOptions
+              Services name=routes value=$editRoutes label="Services I can take" options=$lineOptions
+              Text variant=muted "Select alternatives only when they use your chosen platform and reach the same interchange. We choose the first catchable service."
+              Select name=direction value=$editDirection label="Direction / platform" options=$directionOptions
+              Input name=destination value=$editDestination label="Destination shown on vehicle (optional filter)" placeholder="e.g. Brixton" maxLength=100
+            Input name=to value=$editTo label="Where you get off" placeholder="e.g. Oxford Circus" maxLength=100
+            Grid variant=form-grid
+              Input name=walk value=$editWalk type=number min=0 max=90 label="Walk to this stop / platform"
+              Input name=ride value=$editRide type=number min=1 max=180 label="Estimated ride duration"
+            Text variant=muted "For a connection, include the walk from the previous stop to this platform. Ride durations are your estimates, not live traffic predictions."
+            Button intent=addLeg variant=wide icon=plus "$addLegLabel"
+            Row variant=editor-footer
+              Text variant=muted "$editorSummary"
+              Button intent=saveJourney variant=primary disabled=$saving "Save journey"
+        Row variant=footer
+          Text "My Commute · London"
+          Text "TfL predictions refresh every 30 seconds while open."
+  Row variant=bottom-nav
+    Button intent=today variant=$todayVariant icon=route "Journey"
+    Button intent=board variant=$boardVariant icon=clock "Live"
+    Button intent=status variant=$statusVariant icon=activity "Status"
+    Button intent=saved variant=$savedVariant icon=bookmark "Saved"
+    Button intent=settings variant=$settingsVariant icon=settings "You"
+  If condition=$toast
+    Alert variant=toast role=status "$toast"

@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "completeApps": 38,
+  "installerIntegration": 9,
+  "verifiedPackages": 498,
+  "verifiedCommutePackages": 47,
+  "executableSHA256": "42da8c83dadf9df1dfd5e483c7434aaa797be363e0b3d8d5251ba9fee9673eb1",
+  "candidate": true,
+  "publicRelease": false
+}

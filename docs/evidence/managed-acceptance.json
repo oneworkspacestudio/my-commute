@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "passed": true,
+  "checks": [
+    {
+      "label": "fresh",
+      "workspace": "0.3.0-preview.114",
+      "commute": "0.1.0-preview.1",
+      "oidc": true,
+      "sharedPicker": true,
+      "anonymousDenied": true,
+      "geolocationEnabled": true
+    },
+    {
+      "label": "fresh-restart",
+      "workspace": "0.3.0-preview.114",
+      "commute": "0.1.0-preview.1",
+      "oidc": true,
+      "sharedPicker": true,
+      "anonymousDenied": true,
+      "geolocationEnabled": true
+    },
+    {
+      "label": "fresh-opt-out",
+      "commuteOmitted": true
+    },
+    {
+      "label": "upgrade-with-explicit-selection",
+      "workspace": "0.3.0-preview.114",
+      "commute": "0.1.0-preview.1",
+      "oidc": true,
+      "sharedPicker": true,
+      "anonymousDenied": true,
+      "geolocationEnabled": true
+    },
+    {
+      "label": "independent-app-update",
+      "workspace": "0.3.0-preview.114",
+      "commute": "0.1.0-preview.2-test",
+      "oidc": true,
+      "sharedPicker": true,
+      "anonymousDenied": true,
+      "geolocationEnabled": true
+    },
+    {
+      "label": "independent-app-rollback",
+      "workspace": "0.3.0-preview.114",
+      "commute": "0.1.0-preview.1",
+      "oidc": true,
+      "sharedPicker": true,
+      "anonymousDenied": true,
+      "geolocationEnabled": true
+    }
+  ],
+  "scope": "synthetic isolated native NTFS managed acceptance",
+  "publicRelease": false,
+  "ownerInstallation": false,
+  "physicalPhone": false
+}

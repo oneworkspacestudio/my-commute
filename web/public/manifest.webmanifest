@@ -1,0 +1,1 @@
+{"name":"My Commute","short_name":"Commute","description":"Your London commute, connected","start_url":"./","scope":"./","display":"standalone","background_color":"#f4f6f9","theme_color":"#124bda","icons":[{"src":"commute.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
