@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "target": "primary",
+  "defaultNewsAdded": false,
+  "workspace": "0.3.0-preview.116",
+  "commute": "0.1.0-preview.1",
+  "transaction": "complete",
+  "verifiedCommutePayloads": 47,
+  "managerMatchesPublicRelease": true,
+  "unselectedAppsAndPackagesPreserved": true,
+  "identitiesAndExistingCredentialsPreserved": true,
+  "locationsPreserved": true,
+  "verifiedRecoveryRetained": true,
+  "cleanupFinished": "2026-11-05T17:15:24.8683474Z",
+  "runningAppCount": 38,
+  "baselineFailures": [],
+  "newFailures": [],
+  "finished": "2026-11-05T17:15:42.8745582Z",
+  "servedAssetHashes": [
+    {
+      "path": "/commute/assets/index-ElLGqU83.js",
+      "sha256": "9e5aa01fb3719e91aedf047b2684e45e34cae9e3edc7a9d98b27b4cd034b0c47"
+    },
+    {
+      "path": "/commute/assets/index-PwP1ZJvj.css",
+      "sha256": "c92b50d0fde19e4c82379318f676c64d250d95f8894e34112902e61bb498c28b"
+    },
+    {
+      "path": "/commute/commute.svg",
+      "sha256": "0952f416f21206544f5640ce1b860604312d448a82cfc46bf8808efe6015c3c0"
+    }
+  ],
+  "authenticatedOwnerBrowserVerified": false,
+  "personalJourneyImported": false,
+  "secondaryVerified": false
+}
