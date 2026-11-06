@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "apps": 42,
+  "packages": 870,
+  "commutePayloads": 47,
+  "workspace": "0.3.0-preview.121-commute-qa",
+  "localQAOnly": true,
+  "installed": false
+}

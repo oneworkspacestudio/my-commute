@@ -72,3 +72,17 @@ Verification of the updated native build:
 Evidence is in `docs/evidence/bus-timetables.json`. Synthetic NTFS test accounts
 and data were removed after the app processes exited. Owner installations,
 personal journey imports and credentials were not used as test fixtures.
+
+## Release2 publication and primary delivery
+
+The immutable preview.2 release and public channel are verified. Exact package
+acceptance covers normal app-only1→2 update, rollback to1 and reapply2 with saved
+journeys and preferences retained. The full public-pin catalogue contains42 apps
+and870 hash-verified packages; its QA-only manager was not deployed.
+
+The primary PC completed its normal public app-only update on6 November2026,
+retaining Workspace120 and all unrelated apps/data, with47 installed payload
+hashes, exact served UI,41 healthy services and verified recovery retained.
+The secondary PC's required Workspace repair is still pending reconnection;
+no Commute2 installation is claimed there. See the separate release and target
+receipts in `docs/evidence/` and repository history for the precise resume point.

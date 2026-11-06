@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "passed": true,
+  "appVersion": "0.1.0-preview.2",
+  "exactExecutableSHA256": "38d0a8f1e10af10aea9590e9a074f9431c80d68df5864292c3a7c8bce33f2156",
+  "checks": [
+    {
+      "label": "fresh",
+      "workspace": "0.3.0-preview.116",
+      "commute": "0.1.0-preview.1",
+      "oidc": true,
+      "sharedPicker": true,
+      "anonymousDenied": true,
+      "geolocationEnabled": true
+    },
+    {
+      "label": "app1-to-app2",
+      "workspace": "0.3.0-preview.116",
+      "commute": "0.1.0-preview.2",
+      "oidc": true,
+      "sharedPicker": true,
+      "anonymousDenied": true,
+      "geolocationEnabled": true
+    },
+    {
+      "label": "app2-rollback-to-app1",
+      "workspace": "0.3.0-preview.116",
+      "commute": "0.1.0-preview.1",
+      "oidc": true,
+      "sharedPicker": true,
+      "anonymousDenied": true,
+      "geolocationEnabled": true
+    },
+    {
+      "label": "app2-reapply",
+      "workspace": "0.3.0-preview.116",
+      "commute": "0.1.0-preview.2",
+      "oidc": true,
+      "sharedPicker": true,
+      "anonymousDenied": true,
+      "geolocationEnabled": true
+    }
+  ],
+  "managerAndAccountsPreserved": true,
+  "savedJourneyAndPreferencesPreserved": true,
+  "oidc": true,
+  "scope": "synthetic isolated native NTFS app-only update/rollback",
+  "ownerInstallation": false
+}

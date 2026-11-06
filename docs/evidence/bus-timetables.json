@@ -2,7 +2,7 @@
   "schema": 1,
   "feature": "Bus timetables and scheduled fallback",
   "date": "2026-11-06",
-  "status": "local-unreleased",
+  "status": "published-primary-installed-secondary-pending",
   "uiBuildPassed": true,
   "engineTestsPassed": 14,
   "nativeGoTestsPassed": true,
@@ -22,9 +22,15 @@
   "testWorkersStopped": true,
   "newFixtureRemoved": true,
   "candidateSHA256": "f80311d283c760b5653bc4d6c9bc0b187dc27e535dd474d56e88e83f22f4a144",
-  "published": false,
-  "installed": false,
+  "published": true,
+  "installed": true,
   "releaseVersion": "0.1.0-preview.2",
   "releaseExecutableSHA256": "38d0a8f1e10af10aea9590e9a074f9431c80d68df5864292c3a7c8bce33f2156",
-  "exactReleaseExecutableBrowserScenariosPassed": 10
+  "exactReleaseExecutableBrowserScenariosPassed": 10,
+  "installedTargets": [
+    "primary"
+  ],
+  "pendingTargets": [
+    "secondary"
+  ]
 }

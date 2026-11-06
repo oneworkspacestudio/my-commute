@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "target": "primary",
+  "workspace": "0.3.0-preview.120",
+  "commute": "0.1.0-preview.2",
+  "transaction": "complete",
+  "verifiedCommutePayloads": 47,
+  "managerAndUnselectedPackagesPreserved": true,
+  "existingCredentialsAndIdentityPreserved": true,
+  "commuteJourneysPreferencesAndProviderSettingsPreserved": true,
+  "locationsPreserved": true,
+  "verifiedRecoveryRetained": true,
+  "cleanupFinished": "2026-11-06T18:11:33.940393Z",
+  "runningServices": 41,
+  "servedAssets": [
+    {
+      "path": "/commute/assets/index-Da7xVHtP.js",
+      "sha256": "e19591e0e839f40924edb3170083117128b4cd92c027f3ca5d9170e4a950428d"
+    },
+    {
+      "path": "/commute/assets/index-BokA0E1r.css",
+      "sha256": "bd4288e43b3773f997fa62a4f6d4b2de2e195a7861d9a314cfcf299e6d5fc51c"
+    },
+    {
+      "path": "/commute/commute.svg",
+      "sha256": "0952f416f21206544f5640ce1b860604312d448a82cfc46bf8808efe6015c3c0"
+    }
+  ],
+  "finished": "2026-11-06T18:12:02.7242227Z"
+}
