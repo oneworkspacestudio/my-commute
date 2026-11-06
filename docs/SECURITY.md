@@ -21,6 +21,11 @@ relevant provider. Transport text is rendered as text, never trusted HTML.
 Fixed upstream hosts, no redirects, strict stop/CRS IDs, bounded responses and
 timeouts avoid a general outbound proxy. No analytics or CDN assets.
 
+Bus timetables use the same authenticated API and fixed TfL host. The server also
+reads GOV.UK's public England/Wales bank-holiday calendar; this request includes no
+journey, account or location data. Unknown calendars or ambiguous service-day
+patterns disable automatic scheduled fallback instead of guessing.
+
 Local preview setup/login is inherited apphost functionality restricted to
 loopback and disabled by managed OIDC. It does not bypass managed sign-in.
 Synthetic tests never use owner accounts, files or installed services.

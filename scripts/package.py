@@ -36,7 +36,7 @@ for name in ['react','react-dom','scheduler','lucide-react']:
  for f in files:copy(f,licenses/(name+'-'+f.name))
 go_root=subprocess.check_output([a.go,'env','GOROOT'],text=True).strip();copy(Path(go_root)/'LICENSE',licenses/'Go-LICENSE')
 (stage/'THIRD-PARTY-NOTICES.md').write_text('\n'.join(notices)+'\n',encoding='utf-8')
-manifest=dict(schema=1,version='0.1.0-preview.1',candidate=not a.release,sourceCommit=commit,executableSHA256=hashlib.sha256((stage/'MyCommute.exe').read_bytes()).hexdigest(),builtNatively=True)
+manifest=dict(schema=1,version='0.1.0-preview.2',candidate=not a.release,sourceCommit=commit,executableSHA256=hashlib.sha256((stage/'MyCommute.exe').read_bytes()).hexdigest(),builtNatively=True)
 (stage/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 suffix='' if a.release else '-candidate'
 archive=out/('MyCommute-windows-amd64'+suffix+'.zip')

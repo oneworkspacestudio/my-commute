@@ -129,7 +129,7 @@ Page Dashboard
                   Text "$bufferNote"
                   Button intent=settings variant=text "Adjust your preferences"
                 Card variant=data-note
-                  Text variant=eyebrow "LIVE DATA, HONEST ESTIMATES"
+                  Text variant=eyebrow "LIVE TIMES & PUBLISHED SCHEDULES"
                   Text "$updatedLabel"
                   Text "Connections use your walking and ride estimates. Check the vehicle destination and station boards before boarding."
         If condition=$showBoard
@@ -138,24 +138,56 @@ Page Dashboard
             Row variant=segmented
               Button intent=outbound variant=$outboundVariant "To work"
               Button intent=inbound variant=$inboundVariant "Going home"
-          For each=$boards
-            Card variant=board
-              Row variant=spread
-                Stack gap=sm
-                  Text variant=eyebrow "$item.label"
-                  Heading level=2 "$item.name"
-                Badge tone=$item.tone "$item.state"
-              Text variant=muted "$item.filter"
-              For each=$item.rows
-                Row variant=arrival
-                  Badge tone=$item.tone "$item.line"
-                  Stack gap=xs
-                    Text variant=strong "$item.destination"
-                    Text variant=muted "$item.detail"
-                  Stack variant=arrival-time
-                    Text variant=countdown "$item.minutes"
-                    Text variant=muted "$item.clock"
-              Text variant=muted "$item.message"
+          If condition=$hasBusLegs
+            Row variant=segmented
+              Button intent=showArrivals variant=$arrivalsVariant "Arrivals"
+              Button intent=showTimetables variant=$timetablesVariant "Bus timetables"
+          If condition=$showUpcoming
+            Stack gap=lg
+              For each=$boards
+                Card variant=board
+                  Row variant=spread
+                    Stack gap=sm
+                      Text variant=eyebrow "$item.label"
+                      Heading level=2 "$item.name"
+                    Badge tone=$item.tone "$item.state"
+                  Text variant=muted "$item.filter"
+                  For each=$item.rows
+                    Row variant=arrival
+                      Badge tone=$item.tone "$item.line"
+                      Stack gap=xs
+                        Text variant=strong "$item.destination"
+                        Text variant=muted "$item.detail"
+                      Stack variant=arrival-time
+                        Text variant=countdown "$item.minutes"
+                        Text variant=muted "$item.clock"
+                  Text variant=muted "$item.message"
+          If condition=$emptyTimetables
+            Card
+              Heading level=2 "Bus timetable unavailable"
+              Text "Choose a journey with bus legs. If a timetable could not be loaded, refresh to retry. Live arrivals work independently."
+          If condition=$showTimetables
+            Card
+              Heading level=2 "Full-day bus timetables"
+              Text variant=muted "All times are London local time. Scheduled departures are not live predictions. Times after 24:00 belong to the following day."
+              Select name=timetableDay value=$timetableDay options=$timetableOptions label="Bus timetable day pattern"
+            For each=$timetableCards
+              Card variant=board
+                Heading level=3 "$item.title"
+                Text variant=muted "$item.direction"
+                Text variant=muted "$item.message"
+                If condition=$item.empty
+                  Text "No confirmed pattern selected for this route. Choose a published day pattern above."
+                For each=$item.patterns
+                  Heading level=3 "$item.name"
+                  For each=$item.frequencies
+                    Text variant=muted "$item.text"
+                  For each=$item.rows
+                    Row variant=timetable-hour
+                      Text variant=strong "$item.hour"
+                      Stack gap=xs
+                        Text "$item.times"
+                        Text variant=muted "$item.destination"
         If condition=$showStatus
           Text variant=muted "Live TfL line status, including disruption details."
           For each=$statuses

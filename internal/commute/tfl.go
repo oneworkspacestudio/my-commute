@@ -14,11 +14,15 @@ import (
 )
 
 func (a *App) fetch(ctx context.Context, path string) ([]byte, error) {
+	return a.fetchTTL(ctx, path, 20*time.Second)
+}
+
+func (a *App) fetchTTL(ctx context.Context, path string, ttl time.Duration) ([]byte, error) {
 	a.mu.Lock()
 	c, ok := a.cache[path]
 	key := a.tflKey
 	a.mu.Unlock()
-	if ok && time.Since(c.At) < 20*time.Second {
+	if ok && time.Since(c.At) < ttl {
 		return c.Data, nil
 	}
 	select {
@@ -170,7 +174,7 @@ func (a *App) arrivals(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sort.Slice(arr, func(i, j int) bool { return arr[i].ExpectedArrival < arr[j].ExpectedArrival })
-	apphost.JSON(w, 200, Board{arr, time.Now().UTC().Format(time.RFC3339), "TfL"})
+	apphost.JSON(w, 200, Board{Arrivals: arr, FetchedAt: time.Now().UTC().Format(time.RFC3339), Source: "TfL"})
 }
 func (a *App) status(w http.ResponseWriter, r *http.Request) {
 	raw, e := a.fetch(r.Context(), "/Line/Mode/tube,overground,elizabeth-line,dlr/Status")

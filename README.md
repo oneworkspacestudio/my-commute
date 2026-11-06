@@ -12,14 +12,25 @@ likely to wait at your next platform.
 - Location-assisted direction suggestions and approximate walking time, requested on demand.
 - Connection planning includes walking, ride duration, interchange and a boarding buffer.
 - Full boards retain earlier services, cancellation information and unknown departures.
+- Full-day TfL bus timetables for your selected routes and boarding stops, with published day patterns and frequency windows.
+- Clearly labelled scheduled bus fallback when live arrivals are missing or the connection is beyond the prediction window.
 - Private account storage, shared MyAccounts sign-in, and desktop/phone layouts.
 - Optional Darwin departure boards, with server-side provider credentials.
 
 The initial Highbury–Oxford Circus route is labelled as an example. Its TfL
 arrivals are real; its walking and ride durations are illustrative. Replace it
 with your own journey in Saved. Ride and interchange durations are adjustable
-estimates, not live traffic measurements. The app only recommends a connection
-when a fresh prediction exists; it does not invent later trains or guarantees.
+estimates, not live traffic measurements. Bus connections can use fresh live
+predictions or published exact departures marked **Scheduled · not live**.
+Frequency windows never become invented departure times. Other transport modes
+still need a fresh prediction. Scheduled connections and platform waits are estimates.
+
+Open **Live → Bus timetables** to browse every published
+departure for a day pattern. Times use London's clock. Live predictions replace
+nearby scheduled duplicates; cancellations are retained. Ordinary day patterns
+are selected automatically only when unambiguous and the England/Wales bank-holiday
+calendar is available. Special-day and school-term patterns can be browsed manually;
+automatic fallback is disabled when the correct pattern cannot be confirmed.
 
 ## Run locally
 

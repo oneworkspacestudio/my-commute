@@ -1,5 +1,6 @@
 // @ts-nocheck -- compiler emits untyped data loops; controller and engine are typechecked.
 // Generated from screens/Dashboard.aui; edit AUI source.
+import { Fragment } from 'react'
 import { Alert, Badge, Button, Card, Divider, FileInput, Grid, Heading, Icon, Image, Input, Link, Page, Row, Section, Select, Services, Spacer, Stack, Text } from "@/components/ui"
 
 export function Dashboard({ data, onAction }: { data: any; onAction: (name: string) => void }) {
@@ -180,7 +181,7 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                           <Button intent="settings" variant="text">Adjust your preferences</Button>
                         </Card>
                         <Card variant="data-note">
-                          <Text variant="eyebrow">LIVE DATA, HONEST ESTIMATES</Text>
+                          <Text variant="eyebrow">LIVE TIMES & PUBLISHED SCHEDULES</Text>
                           <Text>{data.updatedLabel}</Text>
                           <Text>Connections use your walking and ride estimates. Check the vehicle destination and station boards before boarding.</Text>
                         </Card>
@@ -198,32 +199,84 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                       <Button intent="inbound" variant={data.inboundVariant}>Going home</Button>
                     </Row>
                   </Row>
-                  {data.boards.map((item, i) => (
-                    <Card key={i} variant="board">
-                      <Row variant="spread">
-                        <Stack gap="sm">
-                          <Text variant="eyebrow">{item.label}</Text>
-                          <Heading level={2}>{item.name}</Heading>
-                        </Stack>
-                        <Badge tone={item.tone}>{item.state}</Badge>
-                      </Row>
-                      <Text variant="muted">{item.filter}</Text>
-                      {item.rows.map((item, i) => (
-                        <Row key={i} variant="arrival">
-                          <Badge tone={item.tone}>{item.line}</Badge>
-                          <Stack gap="xs">
-                            <Text variant="strong">{item.destination}</Text>
-                            <Text variant="muted">{item.detail}</Text>
-                          </Stack>
-                          <Stack variant="arrival-time">
-                            <Text variant="countdown">{item.minutes}</Text>
-                            <Text variant="muted">{item.clock}</Text>
-                          </Stack>
-                        </Row>
+                  {data.hasBusLegs && (
+                    <Row variant="segmented">
+                      <Button intent="showArrivals" variant={data.arrivalsVariant}>Arrivals</Button>
+                      <Button intent="showTimetables" variant={data.timetablesVariant}>Bus timetables</Button>
+                    </Row>
+                  )}
+                  {data.showUpcoming && (
+                    <Stack gap="lg">
+                      {data.boards.map((item, i) => (
+                        <Card key={i} variant="board">
+                          <Row variant="spread">
+                            <Stack gap="sm">
+                              <Text variant="eyebrow">{item.label}</Text>
+                              <Heading level={2}>{item.name}</Heading>
+                            </Stack>
+                            <Badge tone={item.tone}>{item.state}</Badge>
+                          </Row>
+                          <Text variant="muted">{item.filter}</Text>
+                          {item.rows.map((item, i) => (
+                            <Row key={i} variant="arrival">
+                              <Badge tone={item.tone}>{item.line}</Badge>
+                              <Stack gap="xs">
+                                <Text variant="strong">{item.destination}</Text>
+                                <Text variant="muted">{item.detail}</Text>
+                              </Stack>
+                              <Stack variant="arrival-time">
+                                <Text variant="countdown">{item.minutes}</Text>
+                                <Text variant="muted">{item.clock}</Text>
+                              </Stack>
+                            </Row>
+                          ))}
+                          <Text variant="muted">{item.message}</Text>
+                        </Card>
                       ))}
-                      <Text variant="muted">{item.message}</Text>
+                    </Stack>
+                  )}
+                  {data.emptyTimetables && (
+                    <Card>
+                      <Heading level={2}>Bus timetable unavailable</Heading>
+                      <Text>Choose a journey with bus legs. If a timetable could not be loaded, refresh to retry. Live arrivals work independently.</Text>
                     </Card>
-                  ))}
+                  )}
+                  {data.showTimetables && (
+                    <>
+                      <Card>
+                        <Heading level={2}>Full-day bus timetables</Heading>
+                        <Text variant="muted">All times are London local time. Scheduled departures are not live predictions. Times after 24:00 belong to the following day.</Text>
+                        <Select name="timetableDay" value={data.timetableDay} options={data.timetableOptions} label="Bus timetable day pattern" />
+                      </Card>
+                      {data.timetableCards.map((item, i) => (
+                        <Card key={i} variant="board">
+                          <Heading level={3}>{item.title}</Heading>
+                          <Text variant="muted">{item.direction}</Text>
+                          <Text variant="muted">{item.message}</Text>
+                          {item.empty && (
+                            <Text>No confirmed pattern selected for this route. Choose a published day pattern above.</Text>
+                          )}
+                          {item.patterns.map((item, i) => (
+                            <Fragment key={i}>
+                              <Heading level={3}>{item.name}</Heading>
+                              {item.frequencies.map((item, i) => (
+                                <Text key={i} variant="muted">{item.text}</Text>
+                              ))}
+                              {item.rows.map((item, i) => (
+                                <Row key={i} variant="timetable-hour">
+                                  <Text variant="strong">{item.hour}</Text>
+                                  <Stack gap="xs">
+                                    <Text>{item.times}</Text>
+                                    <Text variant="muted">{item.destination}</Text>
+                                  </Stack>
+                                </Row>
+                              ))}
+                            </Fragment>
+                          ))}
+                        </Card>
+                      ))}
+                    </>
+                  )}
                 </>
               )}
               {data.showStatus && (

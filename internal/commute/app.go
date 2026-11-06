@@ -66,11 +66,13 @@ type Arrival struct {
 	Cancelled       bool   `json:"cancelled,omitempty"`
 	Scheduled       string `json:"scheduled,omitempty"`
 	Status          string `json:"status,omitempty"`
+	Timetabled      bool   `json:"timetabled,omitempty"`
 }
 type Board struct {
-	Arrivals  []Arrival `json:"arrivals"`
-	FetchedAt string    `json:"fetchedAt"`
-	Source    string    `json:"source"`
+	Arrivals  []Arrival     `json:"arrivals"`
+	FetchedAt string        `json:"fetchedAt"`
+	Source    string        `json:"source"`
+	Timetable *BusTimetable `json:"timetable,omitempty"`
 }
 type cacheEntry struct {
 	Data []byte
@@ -80,6 +82,7 @@ type App struct {
 	h                 *apphost.Host
 	client            *http.Client
 	mu                sync.Mutex
+	calendarMu        sync.Mutex
 	cache             map[string]cacheEntry
 	tflKey, railToken string
 	slots             chan struct{}
@@ -105,7 +108,7 @@ func New(h *apphost.Host) (*App, error) {
 	h.Mux.HandleFunc("PUT /api/state", h.Require(a.putState))
 	h.Mux.HandleFunc("PUT /api/journey-import", h.Require(a.importJourney))
 	h.Mux.HandleFunc("PUT /api/providers", h.Owner(a.putProviders))
-	for path, fn := range map[string]http.HandlerFunc{"GET /api/search": a.search, "GET /api/stop": a.stop, "GET /api/arrivals": a.arrivals, "GET /api/status": a.status, "GET /api/rail": a.rail} {
+	for path, fn := range map[string]http.HandlerFunc{"GET /api/search": a.search, "GET /api/stop": a.stop, "GET /api/arrivals": a.arrivals, "GET /api/status": a.status, "GET /api/rail": a.rail, "GET /api/timetable": a.busTimetable} {
 		h.Mux.HandleFunc(path, h.Require(fn))
 	}
 	return a, nil

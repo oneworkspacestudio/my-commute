@@ -47,3 +47,28 @@ audit and full bundle hash validation. This is recorded in managed-build.json.
 Earlier candidates are superseded. Managed testing found and fixed a migration
 restart bug; the final binary applies only pending migrations and rejects future
 schemas. No owner data or installation was used as a test fixture.
+
+## Bus timetable preview.2 acceptance — 6 November 2026
+
+Source now adds full-day bus timetable browsing and scheduled fallback. These
+checks describe release preparation. The earlier installation receipt describes
+preview.1 before this feature; publication and target-PC delivery are recorded
+separately in repository history after verification.
+
+Verification of the updated native build:
+
+- UI compilation and TypeScript production build passed.
+- 14 connection/timetable calculation tests passed.
+- Native Go tests passed, including timetable parsing, exact road-side matching,
+  calendar ambiguity, midnight, London DST, request validation and cache reuse.
+- `go vet ./...` passed.
+- Two new native browser scenarios passed: authenticated real TfL timetable and
+  GOV.UK calendar integration; synthetic outage fallback, live replacement, day
+  selection and 320–1440px layout checks.
+- All eight existing native browser scenarios passed against the updated build,
+  including account isolation, CSRF, saved state/restart, GPS and interchanges.
+- The timetable phone screenshot was reviewed; it uses an explicitly synthetic journey.
+
+Evidence is in `docs/evidence/bus-timetables.json`. Synthetic NTFS test accounts
+and data were removed after the app processes exited. Owner installations,
+personal journey imports and credentials were not used as test fixtures.
