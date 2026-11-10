@@ -25,9 +25,8 @@ platform and midnight departure cases have explicit handling. All times display
 in Europe/London, including daylight saving time.
 
 For each journey leg, platform-ready time is the previous selected departure plus
-the selected service's ride time and the interchange walk. The first leg uses the saved walk or a
-fresh, accurate nearby location. GPS walking time uses straight-line distance ×
-1.3 divided by chosen pace: an estimate, not a surveyed pedestrian route. The
+the selected service's ride time and the interchange walk. Location-based
+walking time uses straight-line distance × 1.3 divided by the chosen pace. The
 first service at or after ready time plus the safety buffer is recommended.
 Platform wait is departure minus ready time; the boarding buffer is part of that
 wait. Each downstream leg depends on a catchable upstream live prediction or
@@ -37,10 +36,24 @@ builder must reach the selected alighting stop and can have different ride times
 
 Provider predictions older than 120 seconds and boards not fetched within 90
 seconds cannot be recommended. A fetch error invalidates the previous board.
-Location expires after 120 seconds, needs accuracy ≤100 metres, and is used for
-walk estimates only within 2.5 km of a stop. Direction is suggested only within
-1.5 km of one start stop, when the two distances differ by at least 300 metres.
-Manual direction selection wins. No location history or background tracking.
+Current location expires after 120 seconds and needs accuracy ≤100 metres.
+For the first walk, the planner prefers a nearby current location, then the
+saved Home or Work point, then the leg's saved walk time. Location-based
+walking estimates apply within 2.5 km of the stop. Direction is suggested when
+one starting point is within 1.5 km and at least 300 metres nearer than the
+other. A first boarding stop represents either direction with no saved point.
+Manual direction selection wins.
+
+The Journey screen lists the first two upcoming departures and the full route.
+Marking a leg as boarded uses the current time and that leg's stored ride
+estimate to plan the next transfer. The card then shows the first two
+departures the planner considers catchable. Live keeps the full board.
+Boarding progress belongs to the open page and can be undone or restarted.
+
+Users can capture Home and Work from their device location or use the
+[Postcodes.io lookup](https://postcodes.io/docs/postcode/lookup/) for an
+approximate postcode point. Saving the journey stores the selected coordinates.
+There is no background tracking.
 
 Live boards show matching services returned for the saved route and destination.
 The bus timetable section separately shows full published day patterns.

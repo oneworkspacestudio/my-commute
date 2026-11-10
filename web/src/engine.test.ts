@@ -21,6 +21,22 @@ test('wrong direction, cancelled, stale and unknown times cannot be recommended'
 test('missing upstream service blocks downstream recommendation',()=>{const first=example.outbound[0],second={...first,id:'second'};const s=connect([first,second],{second:b([a(30)])},defaults,now);assert.equal(s[1].chosen,undefined);});
 test('location direction requires fresh accurate and separated endpoints',()=>{const j=example,p={...j.inbound[0].stop,at:now,accuracy:10};assert.equal(suggestDirection(j,p,now),'inbound');assert.equal(suggestDirection(j,{...p,accuracy:500},now),undefined);assert.equal(suggestDirection(j,{...p,at:now-180000},now),undefined);assert.equal(suggestDirection({...j,inbound:j.outbound},p,now),undefined);});
 test('walking from GPS applies only near stop and keeps transfer walks',()=>{const l=example.outbound[0],p={...l.stop,at:now,accuracy:10};assert.equal(connect([l],{[l.id]:b([a(8)])},defaults,now,p)[0].walk,1);assert.equal(connect([l],{},defaults,now,{...p,lat:52})[0].walk,5);});
+test('saved Home and Work take precedence over first stops for direction and supply a walk without GPS',()=>{
+ const leg=example.outbound[0],other=example.inbound[0];
+ const home={lat:leg.stop.lat+.005,lon:leg.stop.lon,source:'postcode' as const};
+ const work={lat:leg.stop.lat,lon:leg.stop.lon,source:'location' as const};
+ const position={...work,at:now,accuracy:10};
+ assert.equal(suggestDirection(example,position,now),'outbound');
+ assert.equal(suggestDirection({...example,home,work},position,now),'inbound');
+ assert.equal(connect([leg],{},defaults,now,undefined,0,home)[0].walk,10);
+ assert.equal(connect([leg],{},defaults,now,position,0,home)[0].walkSource,'live');
+ assert.equal(connect([other,leg],{},defaults,now,undefined,1,home)[0].walk,leg.walkMinutes);
+});
+test('onward planning includes transfer time without counting an elapsed walk twice',()=>{
+ const leg={...example.outbound[0],walkMinutes:4},board={[leg.id]:b([a(4),a(8),a(10)])};
+ assert.equal(connect([leg],board,defaults,now,undefined,0,undefined,now+4*60000)[0].chosen?.id,'10');
+ assert.equal(connect([leg],board,defaults,now,undefined,0,undefined,now-5*60000)[0].chosen?.id,'4');
+});
 test('alternative buses choose the first catchable accepted route',()=>{const l={...example.outbound[0],line:'19,38',destination:'',direction:'',mode:'bus' as const};const board=b([a(8,{lineId:'73'}),a(9,{lineId:'38'}),a(10,{lineId:'19'})]);assert.equal(connect([l],{[l.id]:board},defaults,now)[0].chosen?.lineId,'38');});
 test('exact buffer boundary is catchable and one second early is rejected',()=>{const l=example.outbound[0],early=a(7,{id:'early',expectedArrival:new Date(now+7*60000-1000).toISOString()}),exact=a(7);assert.equal(connect([l],{[l.id]:b([early,exact])},defaults,now)[0].chosen?.id,'7');});
 test('feed errors invalidate even formerly fresh predictions',()=>{const l=example.outbound[0];assert.equal(connect([l],{[l.id]:{...b([a(8)]),error:'Offline'}},defaults,now)[0].chosen,undefined);});

@@ -81,7 +81,9 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                   <Row variant="location-strip">
                     <Icon name="map-pin" />
                     <Text>{data.locationLabel}</Text>
-                    <Button intent="locate" variant="text">{data.locationButton}</Button>
+                    {data.canUseLocation && (
+                      <Button intent="locate" variant="text">{data.locationButton}</Button>
+                    )}
                   </Row>
                   {data.directionSuggestion && (
                     <Alert tone="info">{data.directionSuggestion}</Alert>
@@ -94,99 +96,132 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                       <Button intent="edit" variant="primary" icon="plus">Set up this direction</Button>
                     </Card>
                   ) : (
-                    <Grid variant="journey-grid">
-                      <Stack gap="lg">
-                        <Card variant="hero">
-                          <Row variant="spread">
-                            <Badge tone="mint">{data.heroBadge}</Badge>
-                            <Icon name="arrow-up-right" />
-                          </Row>
-                          <Text variant="hero-kicker">{data.heroKicker}</Text>
-                          <Heading level={2}>{data.heroTitle}</Heading>
-                          <Text variant="hero-copy">{data.heroCopy}</Text>
-                          <Row variant="hero-stats">
-                            <Stack gap="xs">
-                              <Text variant="stat-label">LEAVE BY</Text>
-                              <Text variant="stat-value">{data.leaveBy}</Text>
-                            </Stack>
-                            <Stack gap="xs">
-                              <Text variant="stat-label">EST. AT DESTINATION</Text>
-                              <Text variant="stat-value">{data.arriveBy}</Text>
-                            </Stack>
-                            <Stack gap="xs">
-                              <Text variant="stat-label">PLATFORM WAIT</Text>
-                              <Text variant="stat-value">{data.platformWait}</Text>
-                            </Stack>
-                          </Row>
-                          <Text variant="hero-foot">{data.estimateNote}</Text>
-                        </Card>
-                        <Card variant="timeline">
-                          <Row variant="spread">
-                            <Heading level={2}>Your journey, connected</Heading>
-                            <Button intent="edit" variant="text" icon="pencil">Edit</Button>
-                          </Row>
-                          {data.steps.map((item, i) => (
-                            <Row key={i} variant="step">
-                              <Icon name={item.icon} tone={item.tone} />
-                              <Stack gap="sm">
-                                <Text variant="eyebrow">{item.walkLabel}</Text>
-                                <Row variant="spread">
-                                  <Heading level={3}>{item.title}</Heading>
-                                  <Badge tone={item.tone}>{item.time}</Badge>
-                                </Row>
-                                <Text variant="muted">{item.detail}</Text>
-                                <Text variant="connection">{item.connection}</Text>
-                                <Button intent="startHere" payload={item.index} variant="text">Start from this stop</Button>
-                              </Stack>
-                            </Row>
-                          ))}
-                          <Row variant="destination">
-                            <Icon name="flag" />
-                            <Stack gap="xs">
-                              <Text variant="strong">{data.destination}</Text>
-                              <Text variant="muted">{data.finalWalkLabel}</Text>
-                            </Stack>
-                          </Row>
-                        </Card>
-                      </Stack>
-                      <Stack gap="lg">
-                        <Card>
-                          <Row variant="spread">
-                            <Heading level={2}>Next at your stop</Heading>
+                    <Stack gap="lg">
+                      <Card variant="trip-quick">
+                        <Row variant="spread">
+                          <Heading level={2}>{data.nextTitle}</Heading>
+                          {data.showConnectionPlan && (
                             <Badge tone={data.feedTone}>{data.feedLabel}</Badge>
+                          )}
+                        </Row>
+                        {data.tripProgress && (
+                          <Text variant="connection">{data.tripProgress}</Text>
+                        )}
+                        {data.showConnectionPlan && (
+                          <Stack gap="sm">
+                            <Text variant="muted">{data.firstStop}</Text>
+                            {data.nextArrivals.map((item, i) => (
+                              <Row key={i} variant="arrival">
+                                <Badge tone={item.tone}>{item.line}</Badge>
+                                <Stack gap="xs">
+                                  <Text variant="strong">{item.destination}</Text>
+                                  <Text variant="muted">{item.detail}</Text>
+                                </Stack>
+                                <Stack variant="arrival-time">
+                                  <Text variant="countdown">{item.minutes}</Text>
+                                  <Text variant="muted">{item.clock}</Text>
+                                </Stack>
+                              </Row>
+                            ))}
+                            {data.noNextArrivals && (
+                              <Text variant="empty">{data.firstBoardMessage}</Text>
+                            )}
+                            <Row variant="trip-actions" gap="sm">
+                              <Button intent="boardLeg" variant="primary">{data.boardLegLabel}</Button>
+                              <Button intent="board" variant="quiet">See all departures</Button>
+                            </Row>
+                          </Stack>
+                        )}
+                        {data.canUndoBoarding && (
+                          <Row variant="trip-actions" gap="sm">
+                            <Button intent="undoBoarding" variant="quiet">Undo boarding</Button>
+                            <Button intent="restartTrip" variant="quiet">Restart journey</Button>
                           </Row>
-                          <Text variant="muted">{data.firstStop}</Text>
-                          {data.nextArrivals.map((item, i) => (
-                            <Row key={i} variant="arrival">
-                              <Badge tone={item.tone}>{item.line}</Badge>
-                              <Stack gap="xs">
-                                <Text variant="strong">{item.destination}</Text>
-                                <Text variant="muted">{item.detail}</Text>
-                              </Stack>
-                              <Stack variant="arrival-time">
-                                <Text variant="countdown">{item.minutes}</Text>
-                                <Text variant="muted">{item.clock}</Text>
-                              </Stack>
+                        )}
+                        <Stack variant="trip-route" gap="sm">
+                          {data.steps.map((item, i) => (
+                            <Row key={i} variant="trip-summary" gap="sm">
+                              <Icon name={item.icon} tone={item.tone} />
+                              <Text variant="strong">{item.summary}</Text>
+                              <Text variant="muted">{item.phase}</Text>
                             </Row>
                           ))}
-                          {data.noNextArrivals && (
-                            <Text variant="empty">{data.firstBoardMessage}</Text>
+                        </Stack>
+                      </Card>
+                      <Grid variant="journey-grid">
+                        <Stack gap="lg">
+                          {data.showConnectionPlan && (
+                            <Card variant="hero">
+                              <Row variant="spread">
+                                <Badge tone="mint">{data.heroBadge}</Badge>
+                                <Icon name="arrow-up-right" />
+                              </Row>
+                              <Text variant="hero-kicker">{data.heroKicker}</Text>
+                              <Heading level={2}>{data.heroTitle}</Heading>
+                              <Text variant="hero-copy">{data.heroCopy}</Text>
+                              <Row variant="hero-stats">
+                                <Stack gap="xs">
+                                  <Text variant="stat-label">{data.readyLabel}</Text>
+                                  <Text variant="stat-value">{data.leaveBy}</Text>
+                                </Stack>
+                                <Stack gap="xs">
+                                  <Text variant="stat-label">EST. AT DESTINATION</Text>
+                                  <Text variant="stat-value">{data.arriveBy}</Text>
+                                </Stack>
+                                <Stack gap="xs">
+                                  <Text variant="stat-label">PLATFORM WAIT</Text>
+                                  <Text variant="stat-value">{data.platformWait}</Text>
+                                </Stack>
+                              </Row>
+                              <Text variant="hero-foot">{data.estimateNote}</Text>
+                            </Card>
                           )}
-                          <Button intent="board" variant="wide" icon="arrow-right">See all departures</Button>
-                        </Card>
-                        <Card variant="insight">
-                          <Icon name="sparkles" />
-                          <Heading level={3}>A little breathing room.</Heading>
-                          <Text>{data.bufferNote}</Text>
-                          <Button intent="settings" variant="text">Adjust your preferences</Button>
-                        </Card>
-                        <Card variant="data-note">
-                          <Text variant="eyebrow">LIVE TIMES & PUBLISHED SCHEDULES</Text>
-                          <Text>{data.updatedLabel}</Text>
-                          <Text>Connections use your walking and ride estimates. Check the vehicle destination and station boards before boarding.</Text>
-                        </Card>
-                      </Stack>
-                    </Grid>
+                          <Card variant="timeline">
+                            <Row variant="spread">
+                              <Heading level={2}>Your journey, connected</Heading>
+                              <Button intent="edit" variant="text" icon="pencil">Edit</Button>
+                            </Row>
+                            {data.steps.map((item, i) => (
+                              <Row key={i} variant="step">
+                                <Icon name={item.icon} tone={item.tone} />
+                                <Stack gap="sm">
+                                  <Text variant="eyebrow">{item.walkLabel}</Text>
+                                  <Row variant="spread">
+                                    <Heading level={3}>{item.title}</Heading>
+                                    <Badge tone={item.tone}>{item.time}</Badge>
+                                  </Row>
+                                  <Text variant="muted">{item.detail}</Text>
+                                  <Text variant="connection">{item.connection}</Text>
+                                  {item.showStart && (
+                                    <Button intent="startHere" payload={item.index} variant="text">Start from this stop</Button>
+                                  )}
+                                </Stack>
+                              </Row>
+                            ))}
+                            <Row variant="destination">
+                              <Icon name="flag" />
+                              <Stack gap="xs">
+                                <Text variant="strong">{data.destination}</Text>
+                                <Text variant="muted">{data.finalWalkLabel}</Text>
+                              </Stack>
+                            </Row>
+                          </Card>
+                        </Stack>
+                        <Stack gap="lg">
+                          <Card variant="insight">
+                            <Icon name="sparkles" />
+                            <Heading level={3}>A little breathing room.</Heading>
+                            <Text>{data.bufferNote}</Text>
+                            <Button intent="settings" variant="text">Adjust your preferences</Button>
+                          </Card>
+                          <Card variant="data-note">
+                            <Text variant="eyebrow">LIVE TIMES & PUBLISHED SCHEDULES</Text>
+                            <Text>{data.updatedLabel}</Text>
+                            <Text>Connections use your walking and ride estimates. Check the vehicle destination and station boards before boarding.</Text>
+                          </Card>
+                        </Stack>
+                      </Grid>
+                    </Stack>
                   )}
                 </>
               )}
@@ -338,7 +373,7 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                   </Card>
                   <Card>
                     <Heading level={2}>Your data & location</Heading>
-                    <Text>Journeys are saved privately to your Workspace account. Location is requested only when you tap Use my location. It stays in this page and expires after two minutes.</Text>
+                    <Text>Journeys and the Home or Work points you choose are saved privately to your Workspace account. Use my location checks where you are now and expires after two minutes.</Text>
                     <Text>{data.railAvailability}</Text>
                     <Link href="https://tfl.gov.uk" target="_blank">Powered by Transport for London open data</Link>
                     <Link href="https://www.nationalrail.co.uk/developers/darwin-data-feeds/" target="_blank">National Rail Darwin information</Link>
@@ -368,6 +403,29 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                         <Button intent="editOutbound" variant={data.editOutboundVariant} icon="briefcase">To work</Button>
                         <Button intent="editInbound" variant={data.editInboundVariant} icon="home">Going home</Button>
                       </Row>
+                      <Stack variant="origin-card" gap="sm">
+                        <Row variant="leg-actions" gap="sm">
+                          <Text variant="strong">Starting point · {data.editOriginName}</Text>
+                          <Button intent="toggleOrigin" variant="quiet">{data.originAction}</Button>
+                        </Row>
+                        <Text variant="muted">{data.originDescription}</Text>
+                        {data.originOpen && (
+                          <Stack gap="sm">
+                            <Input name="originPostcode" value={data.originPostcode} label={data.originPostcodeLabel} placeholder="Enter a UK postcode" maxLength={9} autoComplete="off" disabled={data.originBusy} />
+                            <Row variant="leg-actions" gap="sm">
+                              <Button intent="originLookup" variant="quiet" disabled={data.postcodeDisabled}>Use postcode</Button>
+                              <Button intent="originLocate" variant="quiet" disabled={data.originBusy}>Use current location</Button>
+                              {data.hasEditOrigin && (
+                                <Button intent="removeOrigin" variant="danger">Remove starting point</Button>
+                              )}
+                            </Row>
+                            <Text variant="muted">Postcode lookup sends just the postcode to Postcodes.io. It gives an approximate point for the area. Use your device location to pin a specific spot.</Text>
+                            {data.originBusy && (
+                              <Text role="status" variant="muted">Finding starting point…</Text>
+                            )}
+                          </Stack>
+                        )}
+                      </Stack>
                       <Text variant="muted">Add one leg at a time. Use Move up or Move down to change the travel order.</Text>
                       {data.editLegs.map((item, i) => (
                         <Stack key={i} variant="leg-card" gap="sm">

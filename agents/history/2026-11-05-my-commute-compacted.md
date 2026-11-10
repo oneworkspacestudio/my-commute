@@ -89,3 +89,23 @@ The builder changes are local and unreleased. The existing preview.2 publication
 The follow-up authorized release. Source `5b301343def4d71bb99f02b30ac8dca818c15ef1` was pushed and published as [My Commute preview.3](https://github.com/oneworkspacestudio/my-commute/releases/tag/v0.1.0-preview.3). All nine release assets and the anonymous ZIP were verified. ZIP SHA256 `fcb63a06f4d1e3e5661897f8c483d636bc1316a4ecf61ed30fb336de6dfbeae2`. Executable SHA256 `12ce5727957861a08a95c77fef9a075025d758da41037f107b9542dda2820a0a`. The existing manager capability and minimum version remain native-commute-v1 and preview.116.
 
 All 11 browser scenarios passed against the release executable. Synthetic managed upgrade from preview.2, rollback and reapply preserved journeys, preferences, MyAccounts and manager bytes. The public-pin organization rebuild and checksums passed for 43 apps and 918 payloads. Workspace commit `febedef` promotes only the Commute pin and release entry, preserving 286 prior channel rows. The public preview.122 installer anonymously found the update with 47 total payloads and five changed members. The first plan assertion incorrectly expected all 47 to be downloaded. The corrected check compared unchanged entries to the installed synthetic baseline. The real public update then applied successfully and verified every installed payload, service health, and the completed recovery receipt. Both isolated fixtures were stopped and cleaned. Actions remain disabled. This release was not installed on either owner PC.
+
+## Home and Work origins and mobile journey progress
+
+The journey editor has optional Home and Work starting points for each saved
+journey. A user can save a device location or use an approximate postcode point
+from the authenticated, fixed-host Postcodes.io lookup. Only the selected
+coordinates and source are saved. The planner uses the starting points for
+direction inference and as the first-walk fallback behind fresh nearby GPS.
+Older journeys retain the first-stop direction heuristic and stored walk times.
+
+The mobile Journey screen groups the next two departures with a compact
+overview of every leg. Boarding advances the live focus and estimates the
+next connection from the current time, stored ride time, transfer walk and
+boarding buffer. Earlier legs stay visible. Undo and restart apply to
+the open page. No background tracking or server-side trip progress was added.
+
+Build, 17 frontend tests, Go tests and vet, and all 12 native browser scenarios
+passed. The tests used isolated synthetic NTFS accounts and covered postcode
+and GPS origins, saved state after reload, the two departures, transfer timing,
+and undo. The changes are local and unreleased.

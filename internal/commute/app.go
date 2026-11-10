@@ -52,10 +52,12 @@ type LegService struct {
 	Minutes            float64 `json:"minutes"`
 }
 type Journey struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Outbound []Leg  `json:"outbound"`
-	Inbound  []Leg  `json:"inbound"`
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Outbound []Leg   `json:"outbound"`
+	Inbound  []Leg   `json:"inbound"`
+	Home     *Origin `json:"home,omitempty"`
+	Work     *Origin `json:"work,omitempty"`
 }
 type Preferences struct {
 	Buffer    float64 `json:"buffer"`
@@ -121,6 +123,7 @@ func New(h *apphost.Host) (*App, error) {
 	h.Mux.HandleFunc("GET /api/state", h.Require(a.getState))
 	h.Mux.HandleFunc("PUT /api/state", h.Require(a.putState))
 	h.Mux.HandleFunc("PUT /api/journey-import", h.Require(a.importJourney))
+	h.Mux.HandleFunc("PUT /api/origin-lookup", h.Require(a.lookupOrigin))
 	h.Mux.HandleFunc("PUT /api/providers", h.Owner(a.putProviders))
 	h.Mux.HandleFunc("GET /api/bus-services", h.Require(a.busServices))
 	h.Mux.HandleFunc("GET /api/service-paths", h.Require(a.servicePaths))
@@ -206,6 +209,9 @@ func validate(s State) error {
 	for _, j := range s.Journeys {
 		if !stopID.MatchString(j.ID) || ids[j.ID] || strings.TrimSpace(j.Name) == "" || len(j.Name) > 160 || len(j.Outbound) > 8 || len(j.Inbound) > 8 || len(j.Outbound)+len(j.Inbound) == 0 {
 			return errors.New("Use a unique journey, name and up to eight legs per direction")
+		}
+		if (j.Home != nil && !j.Home.valid()) || (j.Work != nil && !j.Work.valid()) {
+			return errors.New("Choose a valid Home or Work starting point")
 		}
 		ids[j.ID] = true
 		legIDs := map[string]bool{}

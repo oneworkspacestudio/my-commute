@@ -14,10 +14,12 @@ files; shared encrypted backups include the database. Do not publish or share
 private data. Provider tokens can be supplied by environment instead. This is
 filesystem protection, not a separate per-field encryption claim.
 
-Location remains in page memory and never goes to the server; only public stop
-IDs are sent to TfL. API requests do not include an owner address, GPS coordinate,
-email or journey name. Stop searches and CRS station pairs necessarily go to the
-relevant provider. Transport text is rendered as text, never trusted HTML.
+The current location used for planning stays in page memory. If a user chooses
+to save Home or Work, that starting point's coordinates are stored with the
+journey in the private database. A postcode lookup sends only the submitted
+postcode to Postcodes.io. The postcode text is not stored in the journey. TfL
+and Darwin receive stop searches, public stop IDs and CRS station pairs.
+Transport text is rendered as text.
 Fixed upstream hosts, no redirects, strict stop/CRS IDs, bounded responses and
 timeouts avoid a general outbound proxy. No analytics or CDN assets.
 
