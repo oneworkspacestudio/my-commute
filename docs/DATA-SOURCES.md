@@ -34,6 +34,13 @@ explicitly labelled published bus departure. The final
 arrival adds the last ride and final walk. Alternative services added in the
 builder must reach the selected alighting stop and can have different ride times.
 
+Reversing a journey builds a Going home draft from the To work legs. The app
+checks the return stop pair and direction against TfL paths and calculates
+the return ride time. For National Rail it swaps the station codes and uses
+the outward ride estimate when Darwin has no return timing. If there is
+no unique TfL match for every service on a leg, the editor asks the user to
+finish that leg before saving.
+
 Provider predictions older than 120 seconds and boards not fetched within 90
 seconds cannot be recommended. A fetch error invalidates the previous board.
 Current location expires after 120 seconds and needs accuracy ≤100 metres.

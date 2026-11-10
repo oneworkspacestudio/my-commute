@@ -131,3 +131,24 @@ preview.3-to-preview.4 upgrade, rollback, and anonymous public reapply.
 The journey and preferences, MyAccounts and manager were preserved.
 All 47 installed Commute payloads, health and the recovery receipt matched.
 Synthetic fixtures were stopped and removed. No owner installation occurred.
+
+## Reverse To work into Going home
+
+The journey editor can build an editable Going home draft in reverse leg
+order. TfL lookup checks return boarding points, line direction, branches,
+and alighting points, including opposite-side bus stops and shared stops
+for alternative routes. It reuses the regular journey builder's route and
+ride calculation. National Rail swaps station codes and uses an outward
+estimate when return timing is unavailable. Transfer walks use the outward
+interchange estimates in reverse order.
+
+Unresolved matches keep their place and open the existing leg editor with
+a boarding search prefilled. An existing return is replaced in the draft
+only after confirmation. Saving applies the draft to the account. The
+change is local and unreleased.
+
+The build, Go tests, 17 frontend tests, and all 13 browser scenarios passed.
+Coverage includes a live TfL Tube reversal and a synthetic bus-and-Tube
+reversal with a confirmed opposite-side boarding stop, an unresolved leg,
+and cancellation preserving the saved return. Layout and reorder tests use
+fixed provider fixtures. Test data used isolated synthetic NTFS accounts.

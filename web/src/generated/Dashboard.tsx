@@ -425,55 +425,68 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                       </Row>
                       <Input name="journeyName" value={data.editName} label="Journey name" placeholder="My work commute" maxLength={80} />
                       <Row variant="segmented">
-                        <Button intent="editOutbound" variant={data.editOutboundVariant} icon="briefcase">To work</Button>
-                        <Button intent="editInbound" variant={data.editInboundVariant} icon="home">Going home</Button>
+                        <Button intent="editOutbound" variant={data.editOutboundVariant} disabled={data.reverseBusy} icon="briefcase">To work</Button>
+                        <Button intent="editInbound" variant={data.editInboundVariant} disabled={data.reverseBusy} icon="home">Going home</Button>
                       </Row>
-                      <Stack variant="origin-card" gap="sm">
-                        <Row variant="leg-actions" gap="sm">
-                          <Text variant="strong">Starting point · {data.editOriginName}</Text>
-                          <Button intent="toggleOrigin" variant="quiet">{data.originAction}</Button>
-                        </Row>
-                        <Text variant="muted">{data.originDescription}</Text>
-                        {data.originOpen && (
-                          <Stack gap="sm">
-                            <Input name="originPostcode" value={data.originPostcode} label={data.originPostcodeLabel} placeholder="Enter a UK postcode" maxLength={9} autoComplete="off" disabled={data.originBusy} />
+                      {data.canReverse && (
+                        <Button intent="reverseReturn" variant="quiet" disabled={data.reverseBusy}>Reverse To work journey</Button>
+                      )}
+                      {data.reverseBusy && (
+                        <Alert tone="info" role="status">Checking return stops and services…</Alert>
+                      )}
+                      {data.needsReturnSetup && (
+                        <Alert tone="warning">Open Going home and finish any legs marked Needs setup before saving.</Alert>
+                      )}
+                      {data.showEditControls && (
+                        <>
+                          <Stack variant="origin-card" gap="sm">
                             <Row variant="leg-actions" gap="sm">
-                              <Button intent="originLookup" variant="quiet" disabled={data.postcodeDisabled}>Use postcode</Button>
-                              <Button intent="originLocate" variant="quiet" disabled={data.originBusy}>Use current location</Button>
-                              {data.hasEditOrigin && (
-                                <Button intent="removeOrigin" variant="danger">Remove starting point</Button>
-                              )}
+                              <Text variant="strong">Starting point · {data.editOriginName}</Text>
+                              <Button intent="toggleOrigin" variant="quiet">{data.originAction}</Button>
                             </Row>
-                            <Text variant="muted">Postcode lookup sends just the postcode to Postcodes.io. It gives an approximate point for the area. Use your device location to pin a specific spot.</Text>
-                            {data.originBusy && (
-                              <Text role="status" variant="muted">Finding starting point…</Text>
+                            <Text variant="muted">{data.originDescription}</Text>
+                            {data.originOpen && (
+                              <Stack gap="sm">
+                                <Input name="originPostcode" value={data.originPostcode} label={data.originPostcodeLabel} placeholder="Enter a UK postcode" maxLength={9} autoComplete="off" disabled={data.originBusy} />
+                                <Row variant="leg-actions" gap="sm">
+                                  <Button intent="originLookup" variant="quiet" disabled={data.postcodeDisabled}>Use postcode</Button>
+                                  <Button intent="originLocate" variant="quiet" disabled={data.originBusy}>Use current location</Button>
+                                  {data.hasEditOrigin && (
+                                    <Button intent="removeOrigin" variant="danger">Remove starting point</Button>
+                                  )}
+                                </Row>
+                                <Text variant="muted">Postcode lookup sends just the postcode to Postcodes.io. It gives an approximate point for the area. Use your device location to pin a specific spot.</Text>
+                                {data.originBusy && (
+                                  <Text role="status" variant="muted">Finding starting point…</Text>
+                                )}
+                              </Stack>
                             )}
                           </Stack>
-                        )}
-                      </Stack>
-                      <Text variant="muted">Add one leg at a time. Use Move up or Move down to change the travel order.</Text>
-                      {data.editLegs.map((item, i) => (
-                        <Stack key={i} variant="leg-card" gap="sm">
-                          <Row gap="sm">
-                            <Icon name={item.icon} />
-                            <Stack gap="xs">
-                              <Text variant="strong">{item.title}</Text>
-                              <Text variant="muted">{item.detail}</Text>
+                          <Text variant="muted">Add one leg at a time. Use Move up or Move down to change the travel order.</Text>
+                          {data.editLegs.map((item, i) => (
+                            <Stack key={i} variant="leg-card" gap="sm">
+                              <Row gap="sm">
+                                <Icon name={item.icon} />
+                                <Stack gap="xs">
+                                  <Text variant="strong">{item.title}</Text>
+                                  <Text variant="muted">{item.detail}</Text>
+                                </Stack>
+                              </Row>
+                              <Row variant="leg-actions" gap="sm">
+                                <Button intent="moveLegUp" payload={item.id} variant="quiet" disabled={item.first}>Move up</Button>
+                                <Button intent="moveLegDown" payload={item.id} variant="quiet" disabled={item.last}>Move down</Button>
+                                <Button intent="editLeg" payload={item.id} variant="quiet">{item.editLabel}</Button>
+                                <Button intent="removeLeg" payload={item.id} variant="danger">Remove</Button>
+                              </Row>
                             </Stack>
+                          ))}
+                          <Button intent="startLeg" variant="wide" icon="plus">Add a leg</Button>
+                          <Row variant="editor-footer">
+                            <Text variant="muted">{data.editorSummary}</Text>
+                            <Button intent="saveJourney" variant="primary" disabled={data.saving}>Save journey</Button>
                           </Row>
-                          <Row variant="leg-actions" gap="sm">
-                            <Button intent="moveLegUp" payload={item.id} variant="quiet" disabled={item.first}>Move up</Button>
-                            <Button intent="moveLegDown" payload={item.id} variant="quiet" disabled={item.last}>Move down</Button>
-                            <Button intent="editLeg" payload={item.id} variant="quiet">Edit</Button>
-                            <Button intent="removeLeg" payload={item.id} variant="danger">Remove</Button>
-                          </Row>
-                        </Stack>
-                      ))}
-                      <Button intent="startLeg" variant="wide" icon="plus">Add a leg</Button>
-                      <Row variant="editor-footer">
-                        <Text variant="muted">{data.editorSummary}</Text>
-                        <Button intent="saveJourney" variant="primary" disabled={data.saving}>Save journey</Button>
-                      </Row>
+                        </>
+                      )}
                     </Stack>
                   )}
                   {data.buildingLeg && (

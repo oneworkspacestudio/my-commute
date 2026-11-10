@@ -286,41 +286,48 @@ Page Dashboard
                   Button intent=cancelEdit variant=quiet "Cancel"
                 Input name=journeyName value=$editName label="Journey name" placeholder="My work commute" maxLength=80
                 Row variant=segmented
-                  Button intent=editOutbound variant=$editOutboundVariant icon=briefcase "To work"
-                  Button intent=editInbound variant=$editInboundVariant icon=home "Going home"
-                Stack variant=origin-card gap=sm
-                  Row variant=leg-actions gap=sm
-                    Text variant=strong "Starting point · $editOriginName"
-                    Button intent=toggleOrigin variant=quiet "$originAction"
-                  Text variant=muted "$originDescription"
-                  If condition=$originOpen
-                    Stack gap=sm
-                      Input name=originPostcode value=$originPostcode label=$originPostcodeLabel placeholder="Enter a UK postcode" maxLength=9 autoComplete=off disabled=$originBusy
-                      Row variant=leg-actions gap=sm
-                        Button intent=originLookup variant=quiet disabled=$postcodeDisabled "Use postcode"
-                        Button intent=originLocate variant=quiet disabled=$originBusy "Use current location"
-                        If condition=$hasEditOrigin
-                          Button intent=removeOrigin variant=danger "Remove starting point"
-                      Text variant=muted "Postcode lookup sends just the postcode to Postcodes.io. It gives an approximate point for the area. Use your device location to pin a specific spot."
-                      If condition=$originBusy
-                        Text role=status variant=muted "Finding starting point…"
-                Text variant=muted "Add one leg at a time. Use Move up or Move down to change the travel order."
-                For each=$editLegs
-                  Stack variant=leg-card gap=sm
-                    Row gap=sm
-                      Icon name=$item.icon
-                      Stack gap=xs
-                        Text variant=strong "$item.title"
-                        Text variant=muted "$item.detail"
+                  Button intent=editOutbound variant=$editOutboundVariant disabled=$reverseBusy icon=briefcase "To work"
+                  Button intent=editInbound variant=$editInboundVariant disabled=$reverseBusy icon=home "Going home"
+                If condition=$canReverse
+                  Button intent=reverseReturn variant=quiet disabled=$reverseBusy "Reverse To work journey"
+                If condition=$reverseBusy
+                  Alert tone=info role=status "Checking return stops and services…"
+                If condition=$needsReturnSetup
+                  Alert tone=warning "Open Going home and finish any legs marked Needs setup before saving."
+                If condition=$showEditControls
+                  Stack variant=origin-card gap=sm
                     Row variant=leg-actions gap=sm
-                      Button intent=moveLegUp payload=$item.id variant=quiet disabled=$item.first "Move up"
-                      Button intent=moveLegDown payload=$item.id variant=quiet disabled=$item.last "Move down"
-                      Button intent=editLeg payload=$item.id variant=quiet "Edit"
-                      Button intent=removeLeg payload=$item.id variant=danger "Remove"
-                Button intent=startLeg variant=wide icon=plus "Add a leg"
-                Row variant=editor-footer
-                  Text variant=muted "$editorSummary"
-                  Button intent=saveJourney variant=primary disabled=$saving "Save journey"
+                      Text variant=strong "Starting point · $editOriginName"
+                      Button intent=toggleOrigin variant=quiet "$originAction"
+                    Text variant=muted "$originDescription"
+                    If condition=$originOpen
+                      Stack gap=sm
+                        Input name=originPostcode value=$originPostcode label=$originPostcodeLabel placeholder="Enter a UK postcode" maxLength=9 autoComplete=off disabled=$originBusy
+                        Row variant=leg-actions gap=sm
+                          Button intent=originLookup variant=quiet disabled=$postcodeDisabled "Use postcode"
+                          Button intent=originLocate variant=quiet disabled=$originBusy "Use current location"
+                          If condition=$hasEditOrigin
+                            Button intent=removeOrigin variant=danger "Remove starting point"
+                        Text variant=muted "Postcode lookup sends just the postcode to Postcodes.io. It gives an approximate point for the area. Use your device location to pin a specific spot."
+                        If condition=$originBusy
+                          Text role=status variant=muted "Finding starting point…"
+                  Text variant=muted "Add one leg at a time. Use Move up or Move down to change the travel order."
+                  For each=$editLegs
+                    Stack variant=leg-card gap=sm
+                      Row gap=sm
+                        Icon name=$item.icon
+                        Stack gap=xs
+                          Text variant=strong "$item.title"
+                          Text variant=muted "$item.detail"
+                      Row variant=leg-actions gap=sm
+                        Button intent=moveLegUp payload=$item.id variant=quiet disabled=$item.first "Move up"
+                        Button intent=moveLegDown payload=$item.id variant=quiet disabled=$item.last "Move down"
+                        Button intent=editLeg payload=$item.id variant=quiet "$item.editLabel"
+                        Button intent=removeLeg payload=$item.id variant=danger "Remove"
+                  Button intent=startLeg variant=wide icon=plus "Add a leg"
+                  Row variant=editor-footer
+                    Text variant=muted "$editorSummary"
+                    Button intent=saveJourney variant=primary disabled=$saving "Save journey"
             If condition=$buildingLeg
               Stack gap=lg
                 Row variant=spread

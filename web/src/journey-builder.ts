@@ -1,11 +1,9 @@
 import {useEffect,useRef,useState} from 'react';
-import {destinationKey} from './engine';
 import type {Board,Leg,LegService,Mode,Stop} from './engine';
+import {pathsTo,routeDetails} from './route-paths';
+import type {Load,Path} from './route-paths';
 
 type Stage='summary'|'mode'|'train'|'board'|'services'|'alight'|'review';
-type RouteStop=Stop&{minutes:number};
-type Path=Omit<LegService,'minutes'>&{source:string;stops:RouteStop[]};
-type Load=<T>(path:string,signal?:AbortSignal)=>Promise<T>;
 export const modeLabel:Record<Mode,string>={bus:'Bus',tube:'Underground',overground:'Overground','elizabeth-line':'Elizabeth line',dlr:'DLR','national-rail':'National Rail'};
 const trainModes=(Object.keys(modeLabel) as Mode[]).filter(mode=>mode!=='bus');
 const emptyStop:Stop={id:'',name:'',lat:0,lon:0};
@@ -13,11 +11,6 @@ function newLeg(mode:Mode,id:string=crypto.randomUUID()):Leg {
  return {id,mode,stop:emptyStop,line:'',lineName:'',direction:'',destination:'',rideMinutes:0,walkMinutes:5,to:''};
 }
 
-function groupKey(path:Path){return [path.lineId,path.direction,path.terminusId].join('|');}
-function pathsTo(paths:Path[],stopId:string){
- const missing=new Set(paths.filter(p=>!p.stops.some(s=>s.id===stopId)).map(groupKey));
- return paths.filter(p=>!missing.has(groupKey(p)));
-}
 function describeError(error:unknown){return error instanceof Error?error.message:'Transport data is unavailable.';}
 
 export function useJourneyBuilder(load:Load){
@@ -43,6 +36,9 @@ export function useJourneyBuilder(load:Load){
  function start(){reset();setLeg(newLeg('bus'));setStage('mode');}
  function edit(existing:Leg){
   reset();setEditing(true);setLeg(structuredClone(existing));setAutoRide(existing.services?.length?Math.max(...existing.services.map(s=>s.minutes)):existing.rideMinutes);setAutoSource(existing.rideSource||'Saved estimate');setStage('review');
+ }
+ function setUpReturn(existing:Leg,boarding:string){
+  reset();setEditing(true);setLeg({...newLeg(existing.mode,existing.id),walkMinutes:existing.walkMinutes});setQuery(boarding);setStage('board');
  }
  function chooseMode(mode:Mode){setLeg({...newLeg(mode,leg.id),walkMinutes:leg.walkMinutes});go('board');}
  function changeRoute(){setLeg({...newLeg(leg.mode,leg.id),walkMinutes:leg.walkMinutes});setPaths([]);setBusRoutes([]);setAutoRide(0);setAutoSource('');go('board');}
@@ -140,19 +136,9 @@ export function useJourneyBuilder(load:Load){
  }):[];
  function alight(id:string){
   const stop=commonStops.find(s=>s.id===id);if(!stop)return;
-  const usable=pathsTo(paths,id);
-  const services=usable.map(p=>{
-   const aliases=busRoutes.filter(r=>r.lineId===p.lineId&&r.direction===p.direction);
-   const sameTerminus=paths.filter(x=>x.lineId===p.lineId&&x.direction===p.direction).every(x=>x.terminusId===p.terminusId);
-   const alias=aliases.find(r=>destinationKey(r.terminus)===destinationKey(p.terminus))||(aliases.length===1&&sameTerminus?aliases[0]:undefined);
-   return {lineId:p.lineId,direction:p.direction,terminus:p.terminus,terminusId:p.terminusId,vehicleDestination:alias?.vehicleDestination,minutes:p.stops.find(s=>s.id===id)!.minutes};
-  });
-  const minutes=Math.max(...services.map(s=>s.minutes));
-  const source=usable.some(p=>p.source!=='TfL timetable')?'Estimate from TfL stop spacing':'TfL timetable';
-  const byBranch=new Map<string,LegService>();
-  for(const s of services){const key=groupKey({...s,source,stops:[]});const prior=byBranch.get(key);if(!prior||s.minutes>prior.minutes)byBranch.set(key,s);}
-  setAutoRide(minutes);setAutoSource(source);
-  setLeg(current=>({...current,to:stop.name,alight:{id:stop.id,name:stop.name,lat:stop.lat,lon:stop.lon},services:[...byBranch.values()],direction:'',destination:'',rideMinutes:minutes,rideSource:source,rideOverride:false}));
+  const details=routeDetails(paths,stop,busRoutes);
+  setAutoRide(details.rideMinutes);setAutoSource(details.rideSource||'');
+  setLeg(current=>({...current,...details}));
   go('review');
  }
 
@@ -201,5 +187,5 @@ export function useJourneyBuilder(load:Load){
   estimate:leg.rideMinutes?`${leg.rideMinutes} min · ${leg.rideOverride?'Duration override':leg.rideSource||'Saved estimate'}`:'Travel time unavailable',
   optionsOpen,optionsLabel:optionsOpen?'Hide time options':'Time options',walk:leg.walkMinutes,ride:leg.rideMinutes||'',override:!!leg.rideOverride,overrideLabel:leg.rideOverride?'Use automatic time':'Override ride time',addLabel:editing?'Update leg':'Add leg to journey',
  };
- return {stage,active:stage!=='summary',editing,reset,start,edit,go,chooseMode,chooseStop,loadAlighting,alight,back,changeRoute,override,change,checkedLeg,view,toggleOptions:()=>setOptionsOpen(!optionsOpen)};
+ return {stage,active:stage!=='summary',editing,reset,start,edit,setUpReturn,go,chooseMode,chooseStop,loadAlighting,alight,back,changeRoute,override,change,checkedLeg,view,toggleOptions:()=>setOptionsOpen(!optionsOpen)};
 }
