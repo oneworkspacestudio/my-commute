@@ -152,3 +152,29 @@ Coverage includes a live TfL Tube reversal and a synthetic bus-and-Tube
 reversal with a confirmed opposite-side boarding stop, an unresolved leg,
 and cancellation preserving the saved return. Layout and reorder tests use
 fixed provider fixtures. Test data used isolated synthetic NTFS accounts.
+
+## My Commute preview.5 and standing release instruction
+
+The user authorized all agents working on One Workspace implementation to
+commit, push, release, promote, and verify completed changes by default.
+The local global, workspace, and app AGENTS files record that instruction.
+Workspace commit `7bf8830` records it in the shared suite AGENTS file.
+Follow explicit local-only or draft requests. Owner installation requires
+an installation request.
+
+Source `d5eccb0089fcd5cc5e410dcf80f9532f174fc159` shipped as
+[preview.5](https://github.com/oneworkspacestudio/my-commute/releases/tag/v0.1.0-preview.5).
+Verified nine assets and the anonymous ZIP. ZIP SHA256
+`3903eb657a068bd45d74acb3e535115832319c3134cc639f53d529f5896668a6`.
+The exact executable passed all 13 browser scenarios.
+
+Workspace commit `590fc77` promoted the Commute pin and public channel
+entry, preserving 288 earlier entries. The public preview.122 installer
+passed synthetic preview.4-to-preview.5 upgrade, rollback, and anonymous
+reapply. The saved journey and preferences, MyAccounts, and manager were
+preserved. All 47 installed Commute payloads, health, and the recovery
+receipt matched. The synthetic fixture was stopped and removed.
+
+The ordinary build used the public Workspace preview.122 catalog baseline
+while preview.123 was in preparation. Verified 43 apps and all 918 payloads
+in the rebuilt bundle. This delivery was an app-only release.
