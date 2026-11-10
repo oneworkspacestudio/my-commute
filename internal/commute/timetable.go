@@ -45,13 +45,19 @@ func clockMinutes(m int) string { return fmt.Sprintf("%02d:%02d", m/60, m%60) }
 
 type tflTimetable struct {
 	LineID, LineName, Direction string
-	Stops                       []struct{ ID, Name string }
-	Timetable                   struct {
+	Stops                       []struct {
+		ID, Name string
+		Lat, Lon float64
+	}
+	Timetable struct {
 		DepartureStopID string
 		Routes          []struct {
 			StationIntervals []struct {
 				ID        string
-				Intervals []struct{ StopID string }
+				Intervals []struct {
+					StopID        string
+					TimeToArrival *float64
+				}
 			}
 			Schedules []struct {
 				Name          string

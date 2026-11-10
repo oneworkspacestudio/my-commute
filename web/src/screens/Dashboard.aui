@@ -174,7 +174,6 @@ Page Dashboard
             For each=$timetableCards
               Card variant=board
                 Heading level=3 "$item.title"
-                Text variant=muted "$item.direction"
                 Text variant=muted "$item.message"
                 If condition=$item.empty
                   Text "No confirmed pattern selected for this route. Choose a published day pattern above."
@@ -243,50 +242,94 @@ Page Dashboard
               Button intent=saveProviders variant=primary "Save data connections"
         If condition=$showEditor
           Card variant=editor
-            Row variant=spread
-              Heading level=2 "$editorTitle"
-              Button intent=cancelEdit variant=quiet "Cancel"
-            Input name=journeyName value=$editName label="Journey name" placeholder="My work commute" maxLength=80
-            Row variant=segmented
-              Button intent=editOutbound variant=$editOutboundVariant icon=briefcase "To work"
-              Button intent=editInbound variant=$editInboundVariant icon=home "Going home"
-            Text variant=muted "Add legs in travel order. Each direction needs its own stops, platforms and destinations."
-            For each=$editLegs
-              Row variant=edit-leg
-                Icon name=$item.icon
-                Stack gap=xs
-                  Text variant=strong "$item.title"
-                  Text variant=muted "$item.detail"
-                Button intent=editLeg payload=$item.id variant=quiet icon=pencil "Edit"
-                Button intent=removeLeg payload=$item.id variant=danger icon=trash "Remove"
-            Divider
-            Heading level=3 "$legEditorTitle"
-            Select name=mode value=$editMode label="Transport" options=$modeOptions
-            Input name=search value=$search label="Find your boarding stop or station" placeholder="e.g. Highbury, Brixton, Waterloo" maxLength=100
-            Button intent=searchStops variant=wide icon=search disabled=$searching "$searchLabel"
-            For each=$stopResults
-              Button intent=chooseStop payload=$item.id variant=search-result "$item.label"
-            If condition=$selectedStop
-              Alert tone=info "$selectedStop"
-            If condition=$editRail
-              Input name=crs value=$editCrs label="Departure station code (CRS)" placeholder="e.g. WAT" maxLength=3
-              Input name=toCrs value=$editToCrs label="Destination station code (CRS)" placeholder="e.g. CLJ" maxLength=3
-              Text variant=muted "Choose the boarding station above to enable location suggestions. National Rail uses three-letter station codes. Live boards need a configured Darwin token."
-            Else
-              Select name=line value=$editLine label="Bus route or line" options=$lineOptions
-              Services name=routes value=$editRoutes label="Services I can take" options=$lineOptions
-              Text variant=muted "Select alternatives only when they use your chosen platform and reach the same interchange. We choose the first catchable service."
-              Select name=direction value=$editDirection label="Direction / platform" options=$directionOptions
-              Input name=destination value=$editDestination label="Destination shown on vehicle (optional filter)" placeholder="e.g. Brixton" maxLength=100
-            Input name=to value=$editTo label="Where you get off" placeholder="e.g. Oxford Circus" maxLength=100
-            Grid variant=form-grid
-              Input name=walk value=$editWalk type=number min=0 max=90 label="Walk to this stop / platform"
-              Input name=ride value=$editRide type=number min=1 max=180 label="Estimated ride duration"
-            Text variant=muted "For a connection, include the walk from the previous stop to this platform. Ride durations are your estimates, not live traffic predictions."
-            Button intent=addLeg variant=wide icon=plus "$addLegLabel"
-            Row variant=editor-footer
-              Text variant=muted "$editorSummary"
-              Button intent=saveJourney variant=primary disabled=$saving "Save journey"
+            If condition=$showLegList
+              Stack gap=lg
+                Row variant=spread
+                  Heading level=2 "$editorTitle"
+                  Button intent=cancelEdit variant=quiet "Cancel"
+                Input name=journeyName value=$editName label="Journey name" placeholder="My work commute" maxLength=80
+                Row variant=segmented
+                  Button intent=editOutbound variant=$editOutboundVariant icon=briefcase "To work"
+                  Button intent=editInbound variant=$editInboundVariant icon=home "Going home"
+                Text variant=muted "Add one leg at a time. Use Move up or Move down to change the travel order."
+                For each=$editLegs
+                  Stack variant=leg-card gap=sm
+                    Row gap=sm
+                      Icon name=$item.icon
+                      Stack gap=xs
+                        Text variant=strong "$item.title"
+                        Text variant=muted "$item.detail"
+                    Row variant=leg-actions gap=sm
+                      Button intent=moveLegUp payload=$item.id variant=quiet disabled=$item.first "Move up"
+                      Button intent=moveLegDown payload=$item.id variant=quiet disabled=$item.last "Move down"
+                      Button intent=editLeg payload=$item.id variant=quiet "Edit"
+                      Button intent=removeLeg payload=$item.id variant=danger "Remove"
+                Button intent=startLeg variant=wide icon=plus "Add a leg"
+                Row variant=editor-footer
+                  Text variant=muted "$editorSummary"
+                  Button intent=saveJourney variant=primary disabled=$saving "Save journey"
+            If condition=$buildingLeg
+              Stack gap=lg
+                Row variant=spread
+                  Heading level=2 "$builder.title"
+                  Button intent=cancelLeg variant=quiet "Cancel leg"
+                If condition=$builder.showMode
+                  Grid variant=form-grid
+                    Button intent=chooseBus variant=transport-choice icon=bus "Bus"
+                    Button intent=chooseTrain variant=transport-choice icon=train "Train"
+                If condition=$builder.showTrain
+                  Stack gap=sm
+                    For each=$builder.trainModes
+                      Button intent=chooseTrainMode payload=$item.id variant=search-result icon=train "$item.label"
+                If condition=$builder.showSearch
+                  Stack gap=sm
+                    Input name=builderSearch value=$builder.query label=$builder.searchLabel placeholder="Type a stop or station name" maxLength=100 autoComplete=off
+                    For each=$builder.searchResults
+                      Button intent=builderStop payload=$item.id variant=search-result disabled=$builder.busy "$item.label"
+                If condition=$builder.showServices
+                  Stack gap=sm
+                    Text variant=strong "$builder.stopName"
+                    If condition=$builder.hasServices
+                      Stack gap=sm
+                        Input name=builderSearch value=$builder.query label=$builder.serviceLabel placeholder="Type to filter" autoComplete=off
+                        Services name=builderServices value=$builder.selectedServices label="Services I can take" options=$builder.serviceOptions disabled=$builder.busy
+                    Button intent=builderContinue variant=primary disabled=$builder.cannotContinue "Choose where to get off"
+                If condition=$builder.showAlight
+                  Stack gap=sm
+                    If condition=$builder.noCommonStop
+                      Text "These services have no shared downstream stop. Go back and change the selection."
+                    If condition=$builder.rail
+                      Text variant=muted "Select the station where you leave the train."
+                    Else
+                      Stack gap=sm
+                        Input name=builderSearch value=$builder.query label="Search stops to get off at" placeholder="Type a stop name" autoComplete=off
+                        For each=$builder.alightOptions
+                          Button intent=builderAlight payload=$item.id variant=search-result "$item.label"
+                If condition=$builder.showReview
+                  Stack gap=sm
+                    Text variant=strong "$builder.summary"
+                    If condition=$builder.destinations
+                      Text variant=muted "Towards $builder.destinations"
+                    If condition=$builder.rail
+                      Stack gap=sm
+                        Input name=builderCrs value=$builder.crs label="Boarding station code (CRS)" placeholder="e.g. WAT" maxLength=3
+                        Input name=builderToCrs value=$builder.toCrs label="Alighting station code (CRS)" placeholder="e.g. CLJ" maxLength=3
+                    Alert tone=info "$builder.estimate"
+                    Button intent=builderChangeRoute variant=quiet "Change stops and services"
+                    Button intent=builderOptions variant=quiet "$builder.optionsLabel"
+                    If condition=$builder.optionsOpen
+                      Stack gap=sm
+                        Input name=builderWalk value=$builder.walk type=number min=0 max=90 label="Walk to boarding (minutes)"
+                        Button intent=builderOverride variant=quiet "$builder.overrideLabel"
+                        If condition=$builder.override
+                          Input name=builderRide value=$builder.ride type=number min=1 max=180 label="Ride duration override (minutes)"
+                    Button intent=addLeg variant=primary disabled=$builder.busy "$builder.addLabel"
+                If condition=$builder.busy
+                  Text role=status variant=muted "Loading transport data…"
+                If condition=$builder.notice
+                  Alert tone=warning role=status "$builder.notice"
+                If condition=$builder.showBack
+                  Button intent=builderBack variant=quiet "Back"
         Row variant=footer
           Text "My Commute · London"
           Text "TfL predictions refresh every 30 seconds while open."

@@ -76,6 +76,7 @@ func parseRail(raw []byte, to string) (Board, error) {
 	for _, s := range e.Board.Services {
 		names := []string{}
 		calls := false
+		var rideMinutes float64
 		for _, d := range s.Destination {
 			names = append(names, d.Name)
 			if d.CRS == to {
@@ -86,6 +87,7 @@ func parseRail(raw []byte, to string) (Board, error) {
 			for _, p := range list.Points {
 				if p.CRS == to {
 					calls = true
+					rideMinutes = scheduledRailMinutes(s.STD, p.ST)
 				}
 			}
 		}
@@ -105,9 +107,25 @@ func parseRail(raw []byte, to string) (Board, error) {
 		if s.Platform != "" {
 			platform = "Platform " + s.Platform
 		}
-		board.Arrivals = append(board.Arrivals, Arrival{ID: s.ID, LineID: "", LineName: s.Operator, DestinationName: strings.Join(names, " / "), PlatformName: platform, ExpectedArrival: arrival, Timestamp: generated.UTC().Format(time.RFC3339), Cancelled: s.Cancelled || s.ETD == "Cancelled", Scheduled: s.STD, Status: s.ETD})
+		board.Arrivals = append(board.Arrivals, Arrival{ID: s.ID, LineID: "", LineName: s.Operator, DestinationName: strings.Join(names, " / "), PlatformName: platform, ExpectedArrival: arrival, Timestamp: generated.UTC().Format(time.RFC3339), Cancelled: s.Cancelled || s.ETD == "Cancelled", Scheduled: s.STD, Status: s.ETD, RideMinutes: rideMinutes})
 	}
 	return board, nil
+}
+
+func scheduledRailMinutes(departure, arrival string) float64 {
+	from, e1 := time.Parse("15:04", departure)
+	to, e2 := time.Parse("15:04", arrival)
+	if e1 != nil || e2 != nil {
+		return 0
+	}
+	minutes := to.Sub(from).Minutes()
+	if minutes < 0 {
+		minutes += 24 * 60
+	}
+	if minutes > 180 {
+		return 0
+	}
+	return minutes
 }
 func (a *App) rail(w http.ResponseWriter, r *http.Request) {
 	a.mu.Lock()

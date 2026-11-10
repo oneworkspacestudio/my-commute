@@ -1,7 +1,7 @@
 // @ts-nocheck -- compiler emits untyped data loops; controller and engine are typechecked.
 // Generated from screens/Dashboard.aui; edit AUI source.
 import { Fragment } from 'react'
-import { Alert, Badge, Button, Card, Divider, FileInput, Grid, Heading, Icon, Image, Input, Link, Page, Row, Section, Select, Services, Spacer, Stack, Text } from "@/components/ui"
+import { Alert, Badge, Button, Card, FileInput, Grid, Heading, Icon, Image, Input, Link, Page, Row, Section, Select, Services, Spacer, Stack, Text } from "@/components/ui"
 
 export function Dashboard({ data, onAction }: { data: any; onAction: (name: string) => void }) {
   return (
@@ -251,7 +251,6 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                       {data.timetableCards.map((item, i) => (
                         <Card key={i} variant="board">
                           <Heading level={3}>{item.title}</Heading>
-                          <Text variant="muted">{item.direction}</Text>
                           <Text variant="muted">{item.message}</Text>
                           {item.empty && (
                             <Text>No confirmed pattern selected for this route. Choose a published day pattern above.</Text>
@@ -358,64 +357,136 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
               )}
               {data.showEditor && (
                 <Card variant="editor">
-                  <Row variant="spread">
-                    <Heading level={2}>{data.editorTitle}</Heading>
-                    <Button intent="cancelEdit" variant="quiet">Cancel</Button>
-                  </Row>
-                  <Input name="journeyName" value={data.editName} label="Journey name" placeholder="My work commute" maxLength={80} />
-                  <Row variant="segmented">
-                    <Button intent="editOutbound" variant={data.editOutboundVariant} icon="briefcase">To work</Button>
-                    <Button intent="editInbound" variant={data.editInboundVariant} icon="home">Going home</Button>
-                  </Row>
-                  <Text variant="muted">Add legs in travel order. Each direction needs its own stops, platforms and destinations.</Text>
-                  {data.editLegs.map((item, i) => (
-                    <Row key={i} variant="edit-leg">
-                      <Icon name={item.icon} />
-                      <Stack gap="xs">
-                        <Text variant="strong">{item.title}</Text>
-                        <Text variant="muted">{item.detail}</Text>
-                      </Stack>
-                      <Button intent="editLeg" payload={item.id} variant="quiet" icon="pencil">Edit</Button>
-                      <Button intent="removeLeg" payload={item.id} variant="danger" icon="trash">Remove</Button>
-                    </Row>
-                  ))}
-                  <Divider />
-                  <Heading level={3}>{data.legEditorTitle}</Heading>
-                  <Select name="mode" value={data.editMode} label="Transport" options={data.modeOptions} />
-                  <Input name="search" value={data.search} label="Find your boarding stop or station" placeholder="e.g. Highbury, Brixton, Waterloo" maxLength={100} />
-                  <Button intent="searchStops" variant="wide" icon="search" disabled={data.searching}>{data.searchLabel}</Button>
-                  {data.stopResults.map((item, i) => (
-                    <Button key={i} intent="chooseStop" payload={item.id} variant="search-result">{item.label}</Button>
-                  ))}
-                  {data.selectedStop && (
-                    <Alert tone="info">{data.selectedStop}</Alert>
+                  {data.showLegList && (
+                    <Stack gap="lg">
+                      <Row variant="spread">
+                        <Heading level={2}>{data.editorTitle}</Heading>
+                        <Button intent="cancelEdit" variant="quiet">Cancel</Button>
+                      </Row>
+                      <Input name="journeyName" value={data.editName} label="Journey name" placeholder="My work commute" maxLength={80} />
+                      <Row variant="segmented">
+                        <Button intent="editOutbound" variant={data.editOutboundVariant} icon="briefcase">To work</Button>
+                        <Button intent="editInbound" variant={data.editInboundVariant} icon="home">Going home</Button>
+                      </Row>
+                      <Text variant="muted">Add one leg at a time. Use Move up or Move down to change the travel order.</Text>
+                      {data.editLegs.map((item, i) => (
+                        <Stack key={i} variant="leg-card" gap="sm">
+                          <Row gap="sm">
+                            <Icon name={item.icon} />
+                            <Stack gap="xs">
+                              <Text variant="strong">{item.title}</Text>
+                              <Text variant="muted">{item.detail}</Text>
+                            </Stack>
+                          </Row>
+                          <Row variant="leg-actions" gap="sm">
+                            <Button intent="moveLegUp" payload={item.id} variant="quiet" disabled={item.first}>Move up</Button>
+                            <Button intent="moveLegDown" payload={item.id} variant="quiet" disabled={item.last}>Move down</Button>
+                            <Button intent="editLeg" payload={item.id} variant="quiet">Edit</Button>
+                            <Button intent="removeLeg" payload={item.id} variant="danger">Remove</Button>
+                          </Row>
+                        </Stack>
+                      ))}
+                      <Button intent="startLeg" variant="wide" icon="plus">Add a leg</Button>
+                      <Row variant="editor-footer">
+                        <Text variant="muted">{data.editorSummary}</Text>
+                        <Button intent="saveJourney" variant="primary" disabled={data.saving}>Save journey</Button>
+                      </Row>
+                    </Stack>
                   )}
-                  {data.editRail ? (
-                    <>
-                      <Input name="crs" value={data.editCrs} label="Departure station code (CRS)" placeholder="e.g. WAT" maxLength={3} />
-                      <Input name="toCrs" value={data.editToCrs} label="Destination station code (CRS)" placeholder="e.g. CLJ" maxLength={3} />
-                      <Text variant="muted">Choose the boarding station above to enable location suggestions. National Rail uses three-letter station codes. Live boards need a configured Darwin token.</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Select name="line" value={data.editLine} label="Bus route or line" options={data.lineOptions} />
-                      <Services name="routes" value={data.editRoutes} label="Services I can take" options={data.lineOptions} />
-                      <Text variant="muted">Select alternatives only when they use your chosen platform and reach the same interchange. We choose the first catchable service.</Text>
-                      <Select name="direction" value={data.editDirection} label="Direction / platform" options={data.directionOptions} />
-                      <Input name="destination" value={data.editDestination} label="Destination shown on vehicle (optional filter)" placeholder="e.g. Brixton" maxLength={100} />
-                    </>
+                  {data.buildingLeg && (
+                    <Stack gap="lg">
+                      <Row variant="spread">
+                        <Heading level={2}>{data.builder.title}</Heading>
+                        <Button intent="cancelLeg" variant="quiet">Cancel leg</Button>
+                      </Row>
+                      {data.builder.showMode && (
+                        <Grid variant="form-grid">
+                          <Button intent="chooseBus" variant="transport-choice" icon="bus">Bus</Button>
+                          <Button intent="chooseTrain" variant="transport-choice" icon="train">Train</Button>
+                        </Grid>
+                      )}
+                      {data.builder.showTrain && (
+                        <Stack gap="sm">
+                          {data.builder.trainModes.map((item, i) => (
+                            <Button key={i} intent="chooseTrainMode" payload={item.id} variant="search-result" icon="train">{item.label}</Button>
+                          ))}
+                        </Stack>
+                      )}
+                      {data.builder.showSearch && (
+                        <Stack gap="sm">
+                          <Input name="builderSearch" value={data.builder.query} label={data.builder.searchLabel} placeholder="Type a stop or station name" maxLength={100} autoComplete="off" />
+                          {data.builder.searchResults.map((item, i) => (
+                            <Button key={i} intent="builderStop" payload={item.id} variant="search-result" disabled={data.builder.busy}>{item.label}</Button>
+                          ))}
+                        </Stack>
+                      )}
+                      {data.builder.showServices && (
+                        <Stack gap="sm">
+                          <Text variant="strong">{data.builder.stopName}</Text>
+                          {data.builder.hasServices && (
+                            <Stack gap="sm">
+                              <Input name="builderSearch" value={data.builder.query} label={data.builder.serviceLabel} placeholder="Type to filter" autoComplete="off" />
+                              <Services name="builderServices" value={data.builder.selectedServices} label="Services I can take" options={data.builder.serviceOptions} disabled={data.builder.busy} />
+                            </Stack>
+                          )}
+                          <Button intent="builderContinue" variant="primary" disabled={data.builder.cannotContinue}>Choose where to get off</Button>
+                        </Stack>
+                      )}
+                      {data.builder.showAlight && (
+                        <Stack gap="sm">
+                          {data.builder.noCommonStop && (
+                            <Text>These services have no shared downstream stop. Go back and change the selection.</Text>
+                          )}
+                          {data.builder.rail ? (
+                            <Text variant="muted">Select the station where you leave the train.</Text>
+                          ) : (
+                            <Stack gap="sm">
+                              <Input name="builderSearch" value={data.builder.query} label="Search stops to get off at" placeholder="Type a stop name" autoComplete="off" />
+                              {data.builder.alightOptions.map((item, i) => (
+                                <Button key={i} intent="builderAlight" payload={item.id} variant="search-result">{item.label}</Button>
+                              ))}
+                            </Stack>
+                          )}
+                        </Stack>
+                      )}
+                      {data.builder.showReview && (
+                        <Stack gap="sm">
+                          <Text variant="strong">{data.builder.summary}</Text>
+                          {data.builder.destinations && (
+                            <Text variant="muted">Towards {data.builder.destinations}</Text>
+                          )}
+                          {data.builder.rail && (
+                            <Stack gap="sm">
+                              <Input name="builderCrs" value={data.builder.crs} label="Boarding station code (CRS)" placeholder="e.g. WAT" maxLength={3} />
+                              <Input name="builderToCrs" value={data.builder.toCrs} label="Alighting station code (CRS)" placeholder="e.g. CLJ" maxLength={3} />
+                            </Stack>
+                          )}
+                          <Alert tone="info">{data.builder.estimate}</Alert>
+                          <Button intent="builderChangeRoute" variant="quiet">Change stops and services</Button>
+                          <Button intent="builderOptions" variant="quiet">{data.builder.optionsLabel}</Button>
+                          {data.builder.optionsOpen && (
+                            <Stack gap="sm">
+                              <Input name="builderWalk" value={data.builder.walk} type="number" min={0} max={90} label="Walk to boarding (minutes)" />
+                              <Button intent="builderOverride" variant="quiet">{data.builder.overrideLabel}</Button>
+                              {data.builder.override && (
+                                <Input name="builderRide" value={data.builder.ride} type="number" min={1} max={180} label="Ride duration override (minutes)" />
+                              )}
+                            </Stack>
+                          )}
+                          <Button intent="addLeg" variant="primary" disabled={data.builder.busy}>{data.builder.addLabel}</Button>
+                        </Stack>
+                      )}
+                      {data.builder.busy && (
+                        <Text role="status" variant="muted">Loading transport data…</Text>
+                      )}
+                      {data.builder.notice && (
+                        <Alert tone="warning" role="status">{data.builder.notice}</Alert>
+                      )}
+                      {data.builder.showBack && (
+                        <Button intent="builderBack" variant="quiet">Back</Button>
+                      )}
+                    </Stack>
                   )}
-                  <Input name="to" value={data.editTo} label="Where you get off" placeholder="e.g. Oxford Circus" maxLength={100} />
-                  <Grid variant="form-grid">
-                    <Input name="walk" value={data.editWalk} type="number" min={0} max={90} label="Walk to this stop / platform" />
-                    <Input name="ride" value={data.editRide} type="number" min={1} max={180} label="Estimated ride duration" />
-                  </Grid>
-                  <Text variant="muted">For a connection, include the walk from the previous stop to this platform. Ride durations are your estimates, not live traffic predictions.</Text>
-                  <Button intent="addLeg" variant="wide" icon="plus">{data.addLegLabel}</Button>
-                  <Row variant="editor-footer">
-                    <Text variant="muted">{data.editorSummary}</Text>
-                    <Button intent="saveJourney" variant="primary" disabled={data.saving}>Save journey</Button>
-                  </Row>
                 </Card>
               )}
               <Row variant="footer">

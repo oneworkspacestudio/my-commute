@@ -1,6 +1,17 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {connect,defaults,example,suggestDirection,candidates} from './engine.ts';
 import type {Arrival,Board} from './engine.ts';
+test('selected bus terminus controls matching and uses its own duration unless overridden',()=>{
+ const leg={...example.outbound[0],mode:'bus' as const,line:'24,29',direction:'',destination:'',walkMinutes:0,rideMinutes:15,services:[
+  {lineId:'24',direction:'inbound',terminus:'Grosvenor Road',terminusId:'stop-grosvenor',vehicleDestination:'Pimlico',minutes:10},
+  {lineId:'29',direction:'inbound',terminus:'Trafalgar Square Station',terminusId:'stop-trafalgar',minutes:15},
+ ]};
+ const board=b([a(3,{lineId:'24',destinationName:'Camden Town'}),a(4,{lineId:'24',destinationName:'Pimlico'}),a(5,{lineId:'29',destinationName:'Trafalgar Square'})]);
+ const step=connect([leg],{[leg.id]:board},defaults,now)[0];
+ assert.equal(step.chosen?.id,'4');
+ assert.equal(step.arriveAt,now+14*60000);
+ assert.equal(connect([{...leg,rideOverride:true}],{[leg.id]:board},defaults,now)[0].arriveAt,now+19*60000);
+});
 const now=Date.parse('2026-11-05T08:00:00Z');
 function a(min:number,extra:Partial<Arrival>={}):Arrival{return{id:String(min),lineId:'victoria',lineName:'Victoria',destinationName:'Brixton',direction:'inbound',platformName:'Southbound',expectedArrival:new Date(now+min*60000).toISOString(),timestamp:new Date(now).toISOString(),...extra};}
 function b(arrivals:Arrival[]):Board{return{arrivals,fetchedAt:new Date(now).toISOString(),source:'TfL'};}

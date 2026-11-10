@@ -101,8 +101,8 @@ func (a *App) search(w http.ResponseWriter, r *http.Request) {
 	}
 	var data struct {
 		Matches []struct {
-			ID, Name string
-			Lat, Lon float64
+			ID, Name, Towards string
+			Lat, Lon          float64
 		} `json:"matches"`
 	}
 	if json.Unmarshal(raw, &data) != nil {
@@ -110,8 +110,15 @@ func (a *App) search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := []Stop{}
+	seen := map[string]bool{}
+	add := func(s Stop) {
+		if !seen[s.ID] {
+			seen[s.ID] = true
+			out = append(out, s)
+		}
+	}
 	for _, s := range data.Matches {
-		if strings.HasPrefix(s.ID, "HUB") {
+		if strings.HasPrefix(s.ID, "HUB") || (mode == "bus" && strings.HasPrefix(s.ID, "490G")) {
 			b, e := a.fetch(r.Context(), "/StopPoint/"+url.PathEscape(s.ID))
 			if e != nil {
 				continue
@@ -120,19 +127,31 @@ func (a *App) search(w http.ResponseWriter, r *http.Request) {
 			if json.Unmarshal(b, &hub) != nil {
 				continue
 			}
-			for _, ch := range hub.Children {
-				for _, m := range ch.Modes {
-					if m == mode {
-						out = append(out, ch.public())
-						break
-					}
-				}
-			}
+			boardingStops(hub.Children, mode, add)
 		} else {
-			out = append(out, Stop{ID: s.ID, Name: s.Name, Lat: s.Lat, Lon: s.Lon})
+			name := s.Name
+			if mode == "bus" && s.Towards != "" {
+				name += " · towards " + s.Towards
+			}
+			add(Stop{ID: s.ID, Name: name, Lat: s.Lat, Lon: s.Lon})
 		}
 	}
 	apphost.JSON(w, 200, out)
+}
+
+func boardingStops(stops []tflStop, mode string, add func(Stop)) {
+	for _, stop := range stops {
+		matched := false
+		for _, candidate := range stop.Modes {
+			matched = matched || candidate == mode
+		}
+		group := strings.HasPrefix(stop.ID, "HUB") || strings.HasPrefix(stop.ID, "490G")
+		if matched && !group {
+			add(stop.public())
+		} else if len(stop.Children) > 0 {
+			boardingStops(stop.Children, mode, add)
+		}
+	}
 }
 func (a *App) stop(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")

@@ -44,12 +44,12 @@ func TestRailMidnightAndUnknown(t *testing.T) {
 	}
 }
 func TestRailBoardFiltersCallsAndCancellation(t *testing.T) {
-	raw := `<Envelope><Body><GetDepBoardWithDetailsResponse><GetStationBoardResult><generatedAt>2026-11-05T08:00:00Z</generatedAt><trainServices><service><serviceID>a</serviceID><std>08:10</std><etd>On time</etd><destination><location><locationName>Woking</locationName><crs>WOK</crs></location></destination><subsequentCallingPoints><callingPointList><callingPoint><locationName>Clapham Junction</locationName><crs>CLJ</crs></callingPoint></callingPointList></subsequentCallingPoints></service><service><serviceID>b</serviceID><std>08:12</std><etd>Cancelled</etd><destination><location><locationName>Clapham Junction</locationName><crs>CLJ</crs></location></destination></service><service><serviceID>wrong</serviceID><std>08:15</std><etd>On time</etd><destination><location><locationName>Reading</locationName><crs>RDG</crs></location></destination></service></trainServices></GetStationBoardResult></GetDepBoardWithDetailsResponse></Body></Envelope>`
+	raw := `<Envelope><Body><GetDepBoardWithDetailsResponse><GetStationBoardResult><generatedAt>2026-11-05T08:00:00Z</generatedAt><trainServices><service><serviceID>a</serviceID><std>08:10</std><etd>On time</etd><destination><location><locationName>Woking</locationName><crs>WOK</crs></location></destination><subsequentCallingPoints><callingPointList><callingPoint><locationName>Clapham Junction</locationName><crs>CLJ</crs><st>08:18</st></callingPoint></callingPointList></subsequentCallingPoints></service><service><serviceID>b</serviceID><std>08:12</std><etd>Cancelled</etd><destination><location><locationName>Clapham Junction</locationName><crs>CLJ</crs></location></destination></service><service><serviceID>wrong</serviceID><std>08:15</std><etd>On time</etd><destination><location><locationName>Reading</locationName><crs>RDG</crs></location></destination></service></trainServices></GetStationBoardResult></GetDepBoardWithDetailsResponse></Body></Envelope>`
 	b, e := parseRail([]byte(raw), "CLJ")
 	if e != nil || len(b.Arrivals) != 2 {
 		t.Fatal(b, e)
 	}
-	if b.Arrivals[0].ExpectedArrival != "2026-11-05T08:10:00Z" || !b.Arrivals[1].Cancelled || b.Arrivals[1].ExpectedArrival != "" {
+	if b.Arrivals[0].ExpectedArrival != "2026-11-05T08:10:00Z" || b.Arrivals[0].RideMinutes != 8 || !b.Arrivals[1].Cancelled || b.Arrivals[1].ExpectedArrival != "" {
 		t.Fatal(b)
 	}
 	if !strings.Contains(b.Arrivals[0].PlatformName, "not announced") {

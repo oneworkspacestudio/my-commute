@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "id": "commute",
-  "version": "0.1.0-preview.2",
+  "version": "0.1.0-preview.3",
   "route": "/commute",
   "oidc": true,
   "singleExecutable": true,

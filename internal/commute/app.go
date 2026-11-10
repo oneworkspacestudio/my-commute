@@ -26,18 +26,30 @@ type Line struct {
 	Name string `json:"name"`
 }
 type Leg struct {
-	ID          string  `json:"id"`
-	Mode        string  `json:"mode"`
-	Stop        Stop    `json:"stop"`
-	Line        string  `json:"line"`
-	LineName    string  `json:"lineName"`
-	Direction   string  `json:"direction"`
-	Destination string  `json:"destination"`
-	RideMinutes float64 `json:"rideMinutes"`
-	WalkMinutes float64 `json:"walkMinutes"`
-	To          string  `json:"to"`
-	CRS         string  `json:"crs,omitempty"`
-	ToCRS       string  `json:"toCrs,omitempty"`
+	ID           string       `json:"id"`
+	Mode         string       `json:"mode"`
+	Stop         Stop         `json:"stop"`
+	Line         string       `json:"line"`
+	LineName     string       `json:"lineName"`
+	Direction    string       `json:"direction"`
+	Destination  string       `json:"destination"`
+	RideMinutes  float64      `json:"rideMinutes"`
+	WalkMinutes  float64      `json:"walkMinutes"`
+	To           string       `json:"to"`
+	CRS          string       `json:"crs,omitempty"`
+	ToCRS        string       `json:"toCrs,omitempty"`
+	Alight       *Stop        `json:"alight,omitempty"`
+	Services     []LegService `json:"services,omitempty"`
+	RideOverride bool         `json:"rideOverride,omitempty"`
+	RideSource   string       `json:"rideSource,omitempty"`
+}
+type LegService struct {
+	LineID             string  `json:"lineId"`
+	Direction          string  `json:"direction"`
+	Terminus           string  `json:"terminus"`
+	TerminusID         string  `json:"terminusId"`
+	VehicleDestination string  `json:"vehicleDestination,omitempty"`
+	Minutes            float64 `json:"minutes"`
 }
 type Journey struct {
 	ID       string `json:"id"`
@@ -55,18 +67,20 @@ type State struct {
 	Preferences Preferences `json:"preferences"`
 }
 type Arrival struct {
-	ID              string `json:"id"`
-	LineID          string `json:"lineId"`
-	LineName        string `json:"lineName"`
-	DestinationName string `json:"destinationName"`
-	Direction       string `json:"direction"`
-	PlatformName    string `json:"platformName"`
-	ExpectedArrival string `json:"expectedArrival"`
-	Timestamp       string `json:"timestamp"`
-	Cancelled       bool   `json:"cancelled,omitempty"`
-	Scheduled       string `json:"scheduled,omitempty"`
-	Status          string `json:"status,omitempty"`
-	Timetabled      bool   `json:"timetabled,omitempty"`
+	ID                  string  `json:"id"`
+	LineID              string  `json:"lineId"`
+	LineName            string  `json:"lineName"`
+	DestinationName     string  `json:"destinationName"`
+	DestinationNaptanID string  `json:"destinationNaptanId,omitempty"`
+	Direction           string  `json:"direction"`
+	PlatformName        string  `json:"platformName"`
+	ExpectedArrival     string  `json:"expectedArrival"`
+	Timestamp           string  `json:"timestamp"`
+	Cancelled           bool    `json:"cancelled,omitempty"`
+	Scheduled           string  `json:"scheduled,omitempty"`
+	Status              string  `json:"status,omitempty"`
+	Timetabled          bool    `json:"timetabled,omitempty"`
+	RideMinutes         float64 `json:"rideMinutes,omitempty"`
 }
 type Board struct {
 	Arrivals  []Arrival     `json:"arrivals"`
@@ -108,6 +122,8 @@ func New(h *apphost.Host) (*App, error) {
 	h.Mux.HandleFunc("PUT /api/state", h.Require(a.putState))
 	h.Mux.HandleFunc("PUT /api/journey-import", h.Require(a.importJourney))
 	h.Mux.HandleFunc("PUT /api/providers", h.Owner(a.putProviders))
+	h.Mux.HandleFunc("GET /api/bus-services", h.Require(a.busServices))
+	h.Mux.HandleFunc("GET /api/service-paths", h.Require(a.servicePaths))
 	for path, fn := range map[string]http.HandlerFunc{"GET /api/search": a.search, "GET /api/stop": a.stop, "GET /api/arrivals": a.arrivals, "GET /api/status": a.status, "GET /api/rail": a.rail, "GET /api/timetable": a.busTimetable} {
 		h.Mux.HandleFunc(path, h.Require(fn))
 	}
@@ -198,6 +214,9 @@ func validate(s State) error {
 				return errors.New("Check leg names, stops and travel durations")
 			}
 			legIDs[l.ID] = true
+			if err := validateLegRoute(l); err != nil {
+				return err
+			}
 			if l.Mode == "national-rail" {
 				if !crsID.MatchString(l.CRS) || !crsID.MatchString(l.ToCRS) || l.CRS == l.ToCRS {
 					return errors.New("Choose different valid departure and destination station codes")
@@ -211,7 +230,7 @@ func validate(s State) error {
 				if !stopID.MatchString(l.Stop.ID) || l.Line == "" || l.Stop.Lat < 51.2 || l.Stop.Lat > 51.8 || l.Stop.Lon < -0.65 || l.Stop.Lon > .4 {
 					return errors.New("Choose a London boarding stop and service")
 				}
-				if l.Mode != "bus" && l.Direction == "" && l.Destination == "" {
+				if l.Mode != "bus" && l.Direction == "" && l.Destination == "" && len(l.Services) == 0 {
 					return errors.New("Choose the train direction or destination")
 				}
 			}
