@@ -114,3 +114,20 @@ The preview.4 release follow-up also redesigned the bus timetable. Full
 departure times are shown in compact rows under one heading per destination,
 and frequency windows have a separate section. The TfL feed, timetable
 fallback rules, and day selection semantics are unchanged.
+
+## My Commute preview.4 published
+
+Source `abd275f3444bf0e2b4c7c2a76168423504cdca6a` shipped as
+[preview.4](https://github.com/oneworkspacestudio/my-commute/releases/tag/v0.1.0-preview.4).
+Verified all nine assets and the anonymous ZIP. ZIP SHA256
+`76c151ebebc9657c2c3b94ec32c43631f309625235a4700a100cc7747ab55a7b`.
+All 12 native browser scenarios passed on the exact package. The revised
+timetable was also visually reviewed at 390 px with synthetic data.
+
+The ordinary public-pin rebuild verified 43 apps and 918 payloads. Workspace
+commit `084681f` promoted the Commute pin and channel while preserving 287
+earlier entries. The public preview.122 installer performed a synthetic
+preview.3-to-preview.4 upgrade, rollback, and anonymous public reapply.
+The journey and preferences, MyAccounts and manager were preserved.
+All 47 installed Commute payloads, health and the recovery receipt matched.
+Synthetic fixtures were stopped and removed. No owner installation occurred.
