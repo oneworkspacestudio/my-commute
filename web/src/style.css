@@ -8,7 +8,19 @@
 
 .service-choices{border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:14px;display:flex;gap:14px;flex-wrap:wrap}.service-choices legend{font-size:12px;font-weight:600;color:#64748b}.service-choices label{display:flex;align-items:center;gap:7px;font-size:13px}.service-choices input{accent-color:#1748e8;width:18px;height:18px}
 
-.row--timetable-hour{display:grid;grid-template-columns:3rem minmax(0,1fr);align-items:start;border-top:1px solid var(--border,#e4e8ed);padding:.8rem 0}.row--timetable-hour .text{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.card--timetable-filter .field{max-width:22rem}
+.card--timetable .badge{align-self:flex-start}
+.row--timetable-header{align-items:center}
+.row--timetable-header .heading,.stack--timetable-destination .heading{overflow-wrap:anywhere}
+.stack--timetable-frequency{background:#f2f6fc;border-radius:12px;padding:12px;font-size:13px}
+.row--frequency-window{flex-wrap:wrap;align-items:baseline}
+.row--frequency-window .text--strong{min-width:7.4rem;font-variant-numeric:tabular-nums}
+.stack--timetable-destination .heading{font-size:14px;margin:0;padding:6px 0}
+.row--timetable-hour{display:grid;grid-template-columns:2rem minmax(0,1fr);align-items:baseline;border-top:1px solid var(--line);padding:6px 0}
+.row--timetable-times{flex-wrap:wrap}
+.text--timetable-hour,.text--timetable-time{font-variant-numeric:tabular-nums;font-size:13px}
+.text--timetable-hour{color:var(--muted);font-weight:650}
+.text--timetable-time{min-width:3.35rem;text-align:center;padding:3px 7px;border-radius:6px;background:#f2f6fc;font-weight:650}
 .stack--leg-card{border:1px solid var(--line);border-radius:12px;padding:14px}.row--leg-actions{flex-wrap:wrap}.row--leg-actions .button{min-height:42px}.button--transport-choice{min-height:74px;justify-content:center;border:1px solid var(--line);background:#f5f8ff}.card--editor .service-choices label{min-width:0;overflow-wrap:anywhere}
 .stack--origin-card{border:1px solid var(--line);border-radius:12px;padding:14px}
 .card--trip-quick .row--arrival{padding:8px 0}

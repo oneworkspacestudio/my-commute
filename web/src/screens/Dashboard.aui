@@ -188,26 +188,42 @@ Page Dashboard
               Heading level=2 "Bus timetable unavailable"
               Text "Choose a journey with bus legs. If a timetable could not be loaded, refresh to retry. Live arrivals work independently."
           If condition=$showTimetables
-            Card
+            Card variant=timetable-filter
               Heading level=2 "Full-day bus timetables"
-              Text variant=muted "All times are London local time. Scheduled departures are not live predictions. Times after 24:00 belong to the following day."
+              Text variant=muted "Published times in London local time. Use Arrivals for live updates. A time like 24:10 means 00:10 the following day."
               Select name=timetableDay value=$timetableDay options=$timetableOptions label="Bus timetable day pattern"
             For each=$timetableCards
-              Card variant=board
-                Heading level=3 "$item.title"
-                Text variant=muted "$item.message"
+              Card variant=timetable
+                Row variant=timetable-header gap=sm
+                  Badge tone=red "$item.line"
+                  Heading level=3 "$item.stop"
+                If condition=$item.warning
+                  Text variant=muted "$item.warning"
                 If condition=$item.empty
                   Text "No confirmed pattern selected for this route. Choose a published day pattern above."
                 For each=$item.patterns
-                  Heading level=3 "$item.name"
-                  For each=$item.frequencies
-                    Text variant=muted "$item.text"
-                  For each=$item.rows
-                    Row variant=timetable-hour
-                      Text variant=strong "$item.hour"
-                      Stack gap=xs
-                        Text "$item.times"
-                        Text variant=muted "$item.destination"
+                  Stack gap=md
+                    Badge tone=neutral "$item.name"
+                    If condition=$item.hasFrequency
+                      Stack variant=timetable-frequency gap=sm
+                        Text variant=strong "Service frequency"
+                        For each=$item.frequencies
+                          Row variant=frequency-window gap=sm
+                            If condition=$item.window
+                              Text variant=strong "$item.window"
+                            Text "$item.detail"
+                    If condition=$item.hasDepartures
+                      Stack gap=sm
+                        Text variant=eyebrow "SCHEDULED DEPARTURES"
+                        For each=$item.groups
+                          Stack variant=timetable-destination gap=xs
+                            Heading level=4 "$item.heading"
+                            For each=$item.rows
+                              Row variant=timetable-hour gap=sm
+                                Text variant=timetable-hour "$item.hour"
+                                Row variant=timetable-times gap=xs
+                                  For each=$item.times
+                                    Text variant=timetable-time "$item.text"
         If condition=$showStatus
           Text variant=muted "Live TfL line status, including disruption details."
           For each=$statuses

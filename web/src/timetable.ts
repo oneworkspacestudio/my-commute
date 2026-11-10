@@ -19,8 +19,27 @@ export function mergeBusBoards(leg:Leg,live:Board,schedules:Board[],now:number):
  return {arrivals:result.sort((a,b)=>Date.parse(a.expectedArrival)-Date.parse(b.expectedArrival)),fetchedAt:new Date(now).toISOString(),source:'TfL live arrivals + published bus timetables',timetables:schedules.flatMap(b=>b.timetable?[b.timetable]:[]),liveError:live.error,timetableError:failures||undefined,error:!result.length&&live.error&&schedules.every(b=>b.error)?live.error:undefined};
 }
 
-export function timetableRows(schedule:{departures:{time:string;destination:string;minutes:number}[]}) {
- const groups=new Map<string,{hour:string;destination:string;times:string[]}>();
- for(const d of schedule.departures){const hour=String(Math.floor(d.minutes/60)).padStart(2,'0');const key=hour+'|'+d.destination;const group=groups.get(key)||{hour,destination:d.destination,times:[]};if(!group.times.includes(d.time.slice(-2)))group.times.push(d.time.slice(-2));groups.set(key,group);}
- return [...groups.values()].map(g=>({hour:g.hour+':',destination:g.destination||'Destination not supplied',times:g.times.join(' · ')}));
+export function timetableGroups(schedule:{departures:{time:string;destination:string;minutes:number}[]}) {
+ const destinations=new Map<string,Map<number,Set<string>>>();
+ for(const departure of [...schedule.departures].sort((a,b)=>a.minutes-b.minutes)){
+  const hour=Math.floor(departure.minutes/60);
+  const rows=destinations.get(departure.destination)||new Map<number,Set<string>>();
+  const times=rows.get(hour)||new Set<string>();
+  times.add(departure.time);
+  rows.set(hour,times);
+  destinations.set(departure.destination,rows);
+ }
+ return [...destinations].map(([destination,rows])=>({
+  heading:destination?`Towards ${destination}`:'Destination not supplied',
+  rows:[...rows].map(([hour,times])=>({
+   hour:String(hour).padStart(2,'0'),
+   times:[...times].map(text=>({text})),
+  })),
+ }));
+}
+
+export function frequencyWindow(text:string){
+ const split=text.indexOf(': ');
+ const detail=split<0?text:text.slice(split+2);
+ return {window:split<0?'':text.slice(0,split),detail:detail.charAt(0).toUpperCase()+detail.slice(1)};
 }

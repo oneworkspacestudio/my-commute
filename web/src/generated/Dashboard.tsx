@@ -1,6 +1,5 @@
 // @ts-nocheck -- compiler emits untyped data loops; controller and engine are typechecked.
 // Generated from screens/Dashboard.aui; edit AUI source.
-import { Fragment } from 'react'
 import { Alert, Badge, Button, Card, FileInput, Grid, Heading, Icon, Image, Input, Link, Page, Row, Section, Select, Services, Spacer, Stack, Text } from "@/components/ui"
 
 export function Dashboard({ data, onAction }: { data: any; onAction: (name: string) => void }) {
@@ -278,34 +277,60 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                   )}
                   {data.showTimetables && (
                     <>
-                      <Card>
+                      <Card variant="timetable-filter">
                         <Heading level={2}>Full-day bus timetables</Heading>
-                        <Text variant="muted">All times are London local time. Scheduled departures are not live predictions. Times after 24:00 belong to the following day.</Text>
+                        <Text variant="muted">Published times in London local time. Use Arrivals for live updates. A time like 24:10 means 00:10 the following day.</Text>
                         <Select name="timetableDay" value={data.timetableDay} options={data.timetableOptions} label="Bus timetable day pattern" />
                       </Card>
                       {data.timetableCards.map((item, i) => (
-                        <Card key={i} variant="board">
-                          <Heading level={3}>{item.title}</Heading>
-                          <Text variant="muted">{item.message}</Text>
+                        <Card key={i} variant="timetable">
+                          <Row variant="timetable-header" gap="sm">
+                            <Badge tone="red">{item.line}</Badge>
+                            <Heading level={3}>{item.stop}</Heading>
+                          </Row>
+                          {item.warning && (
+                            <Text variant="muted">{item.warning}</Text>
+                          )}
                           {item.empty && (
                             <Text>No confirmed pattern selected for this route. Choose a published day pattern above.</Text>
                           )}
                           {item.patterns.map((item, i) => (
-                            <Fragment key={i}>
-                              <Heading level={3}>{item.name}</Heading>
-                              {item.frequencies.map((item, i) => (
-                                <Text key={i} variant="muted">{item.text}</Text>
-                              ))}
-                              {item.rows.map((item, i) => (
-                                <Row key={i} variant="timetable-hour">
-                                  <Text variant="strong">{item.hour}</Text>
-                                  <Stack gap="xs">
-                                    <Text>{item.times}</Text>
-                                    <Text variant="muted">{item.destination}</Text>
-                                  </Stack>
-                                </Row>
-                              ))}
-                            </Fragment>
+                            <Stack key={i} gap="md">
+                              <Badge tone="neutral">{item.name}</Badge>
+                              {item.hasFrequency && (
+                                <Stack variant="timetable-frequency" gap="sm">
+                                  <Text variant="strong">Service frequency</Text>
+                                  {item.frequencies.map((item, i) => (
+                                    <Row key={i} variant="frequency-window" gap="sm">
+                                      {item.window && (
+                                        <Text variant="strong">{item.window}</Text>
+                                      )}
+                                      <Text>{item.detail}</Text>
+                                    </Row>
+                                  ))}
+                                </Stack>
+                              )}
+                              {item.hasDepartures && (
+                                <Stack gap="sm">
+                                  <Text variant="eyebrow">SCHEDULED DEPARTURES</Text>
+                                  {item.groups.map((item, i) => (
+                                    <Stack key={i} variant="timetable-destination" gap="xs">
+                                      <Heading level={4}>{item.heading}</Heading>
+                                      {item.rows.map((item, i) => (
+                                        <Row key={i} variant="timetable-hour" gap="sm">
+                                          <Text variant="timetable-hour">{item.hour}</Text>
+                                          <Row variant="timetable-times" gap="xs">
+                                            {item.times.map((item, i) => (
+                                              <Text key={i} variant="timetable-time">{item.text}</Text>
+                                            ))}
+                                          </Row>
+                                        </Row>
+                                      ))}
+                                    </Stack>
+                                  ))}
+                                </Stack>
+                              )}
+                            </Stack>
                           ))}
                         </Card>
                       ))}

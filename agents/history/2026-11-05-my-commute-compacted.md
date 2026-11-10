@@ -109,3 +109,8 @@ Build, 17 frontend tests, Go tests and vet, and all 12 native browser scenarios
 passed. The tests used isolated synthetic NTFS accounts and covered postcode
 and GPS origins, saved state after reload, the two departures, transfer timing,
 and undo. The changes are local and unreleased.
+
+The preview.4 release follow-up also redesigned the bus timetable. Full
+departure times are shown in compact rows under one heading per destination,
+and frequency windows have a separate section. The TfL feed, timetable
+fallback rules, and day selection semantics are unchanged.

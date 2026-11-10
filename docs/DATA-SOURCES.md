@@ -77,8 +77,8 @@ known journeys, route interval destinations and frequency periods. Requests are
 for saved bus routes/stops, not a bulk copy of every London timetable. The server
 caches timetable responses for 15 minutes; each response must match the requested
 line and exact road-side boarding stop. All published patterns remain browsable.
-Known journeys are grouped by hour and destination in the full-day view. Frequency
-windows remain descriptive text and never generate artificial departures.
+The full-day view groups departures by destination and shows each published time
+in full. Frequency windows are shown separately and never generate departures.
 
 Automatic fallback resolves an unambiguous ordinary weekday/range for today and
 tomorrow, with up to 24 hours of future exact departures. England/Wales bank
