@@ -9,7 +9,11 @@ export const Page=box('div','page'),Row=box('div','row'),Stack=box('div','stack'
 export const Heading=({level=2,children,...p}:P)=>h(`h${level}`,{className:cls('heading',p)},children);
 export const Spacer=()=>h('div',{className:'spacer'}),Divider=()=>h('hr'),Image=(p:P)=>h('img',p);
 export const Icon=({name,...p}:P)=>h(icons[name]||TrainFront,{className:cls('icon',p),size:21,'aria-hidden':true,strokeWidth:1.8});
-export function Button({children,intent,payload,icon,onClick,...p}:P){const {act}=useContext(Actions);return h('button',{type:'button',className:cls('button',p),disabled:p.disabled,onClick:intent?()=>act(intent,payload):onClick},icon&&h(Icon,{name:icon}),children);}
+export function Button({children,intent,payload,icon,onClick,label,pressed,...p}:P){
+ const {act}=useContext(Actions);
+ return h('button',{type:'button',className:cls('button',p),disabled:p.disabled,'aria-label':label,'aria-pressed':pressed,
+  onClick:intent?()=>act(intent,payload):onClick},icon&&h(Icon,{name:icon}),children);
+}
 export function Link({children,...p}:P){return h('a',{className:cls('link',p),href:p.href,target:p.target,rel:p.target?'noopener noreferrer':undefined,'data-workspace-apps-trigger':p.variant==='apps'?'true':undefined},p.variant==='apps'&&h(Icon,{name:'apps'}),children);}
 export function Input({label,name,value,...p}:P){const {change}=useContext(Actions);return h('label',{className:'field'},h('span',null,label),h('input',{...p,id:name,name,value:value??'',onChange:(e:React.ChangeEvent<HTMLInputElement>)=>change(name,e.target.value)}));}
 export function Select({label,name,value,options=[]}:P){const {change}=useContext(Actions);return h('label',{className:'field'},label&&h('span',null,label),h('select',{'aria-label':label,id:name,name,value,onChange:(e:React.ChangeEvent<HTMLSelectElement>)=>change(name,e.target.value)},options.map((o:P)=>h('option',{key:o.value,value:o.value},o.label))));}

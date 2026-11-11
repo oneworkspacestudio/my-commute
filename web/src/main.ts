@@ -2,7 +2,7 @@ import React,{createElement as h,useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Dashboard} from './generated/Dashboard';
 import {Actions} from './components/ui';
-import {candidates,clock,connect,defaults,example,minutes,suggestDirection,usablePosition,fresh,matches,rideTime} from './engine';
+import {candidates,catchableArrivals,clock,connect,defaults,example,leaveDeadline,minutes,suggestDirection,usablePosition,fresh,matches,rideTime} from './engine';
 import type {Arrival,Board,Journey,Leg,Mode,Origin,Position,Saved} from './engine';
 import {frequencyWindow,mergeBusBoards,timetableGroups} from './timetable';
 import {boardBadge,boardFreshness,fetchAge,offlineBoard} from './departure-board';
@@ -239,13 +239,14 @@ function App(){
   first?.walkSource==='origin'?`Starting from saved ${startingPoint} · ${first.walk} min estimated walk`:
   position&&!usablePosition(position,now)?'Location expired or approximate. Using saved walk.':
   position?'Your location is too far from this stop. Using saved walk.':locationState;
+ const arrivalSource=(arrival:Arrival,board:Board|undefined)=>arrival.timetabled
+   ?arrival.cachedSchedule?`Cached timetable · fetched ${fetchAge(arrival.scheduleFetchedAt||'',now)}`:'Scheduled · not live'
+   :board?.cacheState==='estimated'?'Estimated from cache':board?.cacheState==='cached'?'Cached prediction':'';
  const row=(arrival:Arrival,leg:Leg,board:Board|undefined)=>{
   const outdated=!!board&&!fresh(arrival,board,now);
   const hasTime=Number.isFinite(Date.parse(arrival.expectedArrival));
   const estimated=!arrival.timetabled&&board?.cacheState==='estimated';
-  const source=arrival.timetabled
-   ?arrival.cachedSchedule?`Cached timetable · fetched ${fetchAge(arrival.scheduleFetchedAt||'',now)}`:'Scheduled · not live'
-   :estimated?'Estimated from cache':board?.cacheState==='cached'?'Cached prediction':'';
+  const source=arrivalSource(arrival,board);
   const status=arrival.cancelled?'Cancelled':outdated?'Out of date':
    arrival.id===steps.find(step=>step.leg.id===leg.id)?.chosen?.id?'Recommended connection':
    source?'':arrival.status||'Live prediction';
@@ -258,20 +259,28 @@ function App(){
   const step=steps[index-start],progress=boarded.find(item=>item.index===index);
   const active=index===start;
   const phase=progress?(progress===lastBoarded&&onBoard?'On board':'Boarded'):index<start?'Skipped':active?'Next leg':'Later';
-  return {index,phase,icon:leg.mode==='bus'?'bus':'train',tone:tone(leg.mode),title:`${leg.lineName} · ${leg.stop.name}`,
-   summary:`${index+1}. ${leg.lineName} → ${leg.to}`,showStart:index>start&&!onBoard,
+  return {index,icon:leg.mode==='bus'?'bus':'train',tone:tone(leg.mode),title:`${leg.lineName} · ${leg.stop.name}`,
+   showStart:index>start&&!onBoard,
    walkLabel:step?`${step.walk} MIN ${index===0||!lastBoarded&&active?'WALK TO STOP':'INTERCHANGE WALK'} · ESTIMATE`:phase,
    time:step?.chosen?clock(step.chosen.expectedArrival):phase,
    detail:`To ${leg.to} · ${step?.chosen?rideTime(leg,step.chosen):leg.rideMinutes} min estimated ride`,
    connection:progress?`Estimated arrival ${clock(progress.arrival)}`:step?.chosen?`${step.chosen.platformName||step.chosen.destinationName} · ${Math.ceil(step.wait!)} min wait · arrive ${clock(step.arriveAt!)}`:step?.reason||''};
  });
- const nextReady=lastBoarded&&first?first.readyAt+prefs.buffer*60000:now;
- const quickNext=firstBoard?next.filter(a=>!a.cancelled&&fresh(a,firstBoard,now)&&Date.parse(a.expectedArrival)>=nextReady).slice(0,2):[];
+ const nextArrivals=first?catchableArrivals(next,firstBoard,first.readyAt,prefs.buffer,now).slice(0,4).map(arrival=>{
+  const line=arrival.lineName||first.leg.lineName;
+  return {
+   variant:arrival===chosen?'catchable-recommended':'catchable-departure',
+   clock:clock(arrival.expectedArrival),
+   service:first.leg.mode==='bus'?`Bus ${line}`:line,
+   detail:[arrival.destinationName,arrivalSource(arrival,firstBoard)].filter(Boolean).join(' · '),
+   deadline:clock(leaveDeadline(arrival,lastBoarded?0:first.walk,prefs.buffer)),
+  };
+ }):[];
  const tripProgress=lastBoarded
   ?onBoard?`On board · estimated arrival at ${legs[lastBoarded.index]?.to} at ${clock(lastBoarded.arrival)}`
    :first?'Previous leg boarded. Check your next connection.':'All legs marked as boarded.'
   :'';
- const headings:Record<string,[string,string]>={today:[direction==='outbound'?'A smoother way to work.':'Let’s get you home.','Your next ride. Your next connection. A little less guesswork.'],board:['Every arrival, in one place.','Live arrivals, scheduled departures and full-day bus timetables.'],status:['Know before you go.','Service updates across the London transport network.'],saved:['The journeys you know.','Save your regular routes. We’ll keep an eye on the next ride.'],settings:['Make it your commute.','A few small preferences for a journey that fits you.'],editor:['Build your everyday journey.','Your stops, your services, both directions.']};
+ const headings:Record<string,[string,string]>={today:['Journey',''],board:['Every arrival, in one place.','Live arrivals, scheduled departures and full-day bus timetables.'],status:['Know before you go.','Service updates across the London transport network.'],saved:['The journeys you know.','Save your regular routes. We’ll keep an eye on the next ride.'],settings:['Make it your commute.','A few small preferences for a journey that fits you.'],editor:['Build your everyday journey.','Your stops, your services, both directions.']};
  const busTimetables=legs.filter(l=>l.mode==='bus').flatMap(l=>(boards[l.id]?.timetables||[]).map(t=>({...t,stopName:l.stop.name})));
  const timetableOptions=[{value:'',label:'Today’s confirmed pattern'},...[...new Set(busTimetables.flatMap(t=>t.schedules.map(s=>s.name)))].map(name=>({value:name,label:name}))];
  const timetableCards=busTimetables.map(t=>{
@@ -279,10 +288,16 @@ function App(){
   return {line:t.lineName,stop:t.stopName,warning:t.warning,empty:!selected.length,
    patterns:selected.map(s=>({name:s.name,groups:timetableGroups(s),hasDepartures:!!s.departures.length,hasFrequency:!!s.frequencies.length,frequencies:s.frequencies.map(frequencyWindow)}))};
  });
- const recommendedTrain=steps.find(s=>s.leg.mode!=='bus'&&s.chosen);
+ const waitStep=steps.find(s=>s.leg.mode!=='bus'&&s.chosen)??first;
  const feed=boardBadge(firstBoard,next,now);
  const estimatedConnection=chosen&&firstBoard?.cacheState==='estimated'&&!chosen.timetabled;
- const planUsesEstimates=steps.some(step=>step.chosen&&(step.chosen.timetabled||boards[step.leg.id]?.cacheState==='estimated'));
+ const ride=chosen&&first?`${clock(chosen.expectedArrival)} ${first.leg.mode==='bus'?'bus':'train'}`:'';
+ const heroTitle=chosen&&first
+  ?lastBoarded?`Catch the ${ride}`:`Leave by ${clock(leaveDeadline(chosen,first.walk,prefs.buffer))} for the ${ride}`
+  :first?'No catchable departure yet':'Journey complete';
+ const heroCopy=chosen&&first
+  ?[chosen.lineName||first.leg.lineName,chosen.destinationName&&`towards ${chosen.destinationName}`,estimatedConnection?'':chosen.platformName].filter(Boolean).join(' · ')
+  :first?.reason||'';
  const boardCards=legs.map(leg=>{
   const board=boards[leg.id];
   const arrivals=(board?.arrivals||[]).filter(arrival=>matches(arrival,leg)&&
@@ -299,8 +314,20 @@ function App(){
   return {label:modeLabel[leg.mode],name:leg.stop.name,tone:badge.tone,state:badge.label,freshness:boardFreshness(board,now),
    filter:`${leg.lineName} · ${terminus} · get off at ${leg.to}`,rows:arrivals.map(arrival=>row(arrival,leg,board)),message};
  });
- const d:any={hasBusLegs:legs.some(l=>l.mode==='bus'),showUpcoming:boardMode==='arrivals',showTimetables:boardMode==='timetables'&&busTimetables.length>0,arrivalsVariant:boardMode==='arrivals'?'selected':'segment',timetablesVariant:boardMode==='timetables'?'selected':'segment',emptyTimetables:boardMode==='timetables'&&!busTimetables.length,timetableDay,timetableOptions,timetableCards,hasBusTimetables:busTimetables.length>0,isOwner,providerKey,providerRail,localLogin:bootstrap.oidc===false,localLoginDescription:bootstrap.needsSetup?'Local preview setup. Use the one-time link printed by the app and a password of at least 12 characters.':'Local preview account. Managed installations use MyAccounts automatically.',localLoginLabel:bootstrap.needsSetup?'Create local account':'Sign in',email,password,time:clock(now),date:new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',timeZone:'Europe/London'}).format(now).toUpperCase(),title:headings[page][0],subtitle:headings[page][1],error,toast,loading,signedOut,loginURL:base+'/auth/login',logoutURL:base+'/auth/logout',busy,refreshLabel:busy?'Updating…':'Refresh',example:journey.id==='example'&&['today','board'].includes(page),showJourney:page==='today',showBoard:page==='board',showStatus:page==='status',showSaved:page==='saved',showSettings:page==='settings',showEditor:page==='editor',journeyId:journey.id,journeyOptions:(saved.journeys.length?saved.journeys:[example]).map(j=>({value:j.id,label:j.name})),outboundVariant:direction==='outbound'?'selected':'segment',inboundVariant:direction==='inbound'?'selected':'segment',locationLabel,locationButton:position?'Update location':'Use my location',emptyDirection:!legs.length,directionSuggestion:'',heroBadge:chosen?(chosen.timetabled?'SCHEDULED CONNECTION · NOT LIVE':estimatedConnection?'ESTIMATED CONNECTION':firstBoard?.cacheState==='cached'?'CACHED CONNECTION':'YOUR NEXT CONNECTION'):'WAITING FOR LIVE DATA',heroKicker:chosen?`${modeLabel[first.leg.mode]} · ${first.leg.lineName}`:'A clearer journey starts here',heroTitle:chosen?`${chosen.timetabled||estimatedConnection?'Plan for':'Catch the'} ${clock(chosen.expectedArrival)}`:'Let’s find your next ride',heroCopy:chosen?`Towards ${chosen.destinationName}. ${first.walk} min to your stop, with ${prefs.buffer} min breathing room.`:first?.reason||'Add your journey to start planning.',leaveBy:lastBoarded&&first?clock(first.readyAt):chosen?clock(Date.parse(chosen.expectedArrival)-(first.walk+prefs.buffer)*60000):'—',arriveBy:complete?clock(last!.arriveAt!+prefs.finalWalk*60000):'—',platformWait:recommendedTrain?`${Math.ceil(recommendedTrain.wait!)} min`:'—',estimateNote:planUsesEstimates?'This plan uses cached predictions or published bus times. Arrival and platform wait are estimates.':complete?'Arrival is estimated using your saved ride and walking times.':'Connections use available predictions and published departure times.',steps:tripSteps,destination:legs.at(-1)?.to||'Your destination',finalWalkLabel:`${prefs.finalWalk} min final walk · estimated`,firstStop:first?.leg.stop.name||'',feedTone:feed.tone,feedLabel:feed.label,feedFreshness:boardFreshness(firstBoard,now),feedIssue:firstBoard?.refreshError,nextArrivals:quickNext.map(a=>row(a,first.leg,firstBoard)),noNextArrivals:!quickNext.length,firstBoardMessage:first?.reason||'Add stops to see arrivals.',bufferNote:`We allow ${prefs.buffer} minutes before boarding, plus your walking time. You can slow the pace or give yourself more time.`,boards:boardCards,statuses:statuses.map(s=>({name:s.name,status:s.lineStatuses?.map((x:any)=>x.statusSeverityDescription).join(', ')||'Status unavailable',tone:s.lineStatuses?.every((x:any)=>x.statusSeverity===10)?'mint':'amber',reason:s.lineStatuses?.map((x:any)=>x.reason||'').join(' ')||''})),noStatus:!statuses.length,statusMessage:statusError,noSaved:!saved.journeys.length,savedJourneys:saved.journeys.map(j=>({...j,description:`${j.outbound.length} legs to work · ${j.inbound.length} legs going home`})),buffer:pref.buffer,walkSpeed:pref.walkSpeed,finalWalk:pref.finalWalk,walkOptions:[{value:3,label:'Relaxed · 3 km/h'},{value:4.5,label:'Steady · 4.5 km/h'},{value:5.5,label:'Brisk · 5.5 km/h'}],railAvailability:rail?'National Rail: Darwin credentials configured on this server.':'National Rail: live boards require a server-side Darwin access token. TfL feeds work independently.',editorTitle:'Your saved route',editName:edit?.name||'',editOutboundVariant:editDir==='outbound'?'selected':'segment',editInboundVariant:editDir==='inbound'?'selected':'segment',
- nextTitle:first?(first.leg.mode==='bus'?'Next buses':'Next trains'):'Journey progress',showConnectionPlan:!!first,tripProgress,canUseLocation:boarded.length===0,canUndoBoarding:boarded.length>0,readyLabel:lastBoarded?'EST. AT NEXT STOP':'LEAVE BY',boardLegLabel:first?.leg.mode==='bus'?'I’m on the bus':'I’m on the train',
+ const d:any={hasBusLegs:legs.some(l=>l.mode==='bus'),showUpcoming:boardMode==='arrivals',showTimetables:boardMode==='timetables'&&busTimetables.length>0,arrivalsVariant:boardMode==='arrivals'?'selected':'segment',timetablesVariant:boardMode==='timetables'?'selected':'segment',emptyTimetables:boardMode==='timetables'&&!busTimetables.length,timetableDay,timetableOptions,timetableCards,hasBusTimetables:busTimetables.length>0,isOwner,providerKey,providerRail,localLogin:bootstrap.oidc===false,localLoginDescription:bootstrap.needsSetup?'Local preview setup. Use the one-time link printed by the app and a password of at least 12 characters.':'Local preview account. Managed installations use MyAccounts automatically.',localLoginLabel:bootstrap.needsSetup?'Create local account':'Sign in',email,password,time:clock(now),date:new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',timeZone:'Europe/London'}).format(now).toUpperCase(),title:headings[page][0],subtitle:headings[page][1],error,toast,loading,signedOut,loginURL:base+'/auth/login',logoutURL:base+'/auth/logout',busy,refreshLabel:busy?'Updating…':'Refresh',example:journey.id==='example'&&['today','board'].includes(page),showJourney:page==='today',showPageHeading:page!=='today',showBoard:page==='board',showStatus:page==='status',showSaved:page==='saved',showSettings:page==='settings',showEditor:page==='editor',journeyId:journey.id,hasJourneyChoices:saved.journeys.length>1,journeyOptions:(saved.journeys.length?saved.journeys:[example]).map(j=>({value:j.id,label:j.name})),outboundActive:direction==='outbound',inboundActive:direction==='inbound',outboundVariant:direction==='outbound'?'selected':'segment',inboundVariant:direction==='inbound'?'selected':'segment',locationLabel,locationButton:position?'Update location':'Use my location',emptyDirection:!legs.length,hasJourneyLegs:!!legs.length,
+ heroBadge:chosen?(chosen.timetabled?'SCHEDULED CONNECTION · NOT LIVE':estimatedConnection?'ESTIMATED CONNECTION':firstBoard?.cacheState==='cached'?'CACHED CONNECTION':'YOUR NEXT CONNECTION'):'',
+ heroTitle,heroCopy,hasRecommendation:!!chosen,
+ arriveLabel:complete?'Est. at destination':'Est. after this ride',
+ arriveBy:complete?clock(last!.arriveAt!+prefs.finalWalk*60_000):chosen?clock(first.arriveAt!):'',
+ waitLabel:waitStep?.leg.mode==='bus'?'Stop wait':'Platform wait',
+ platformWait:waitStep?.wait===undefined?'—':`${Math.ceil(waitStep.wait)} min`,
+ waitStop:waitStep!==first?waitStep?.leg.stop.name:'',
+ steps:tripSteps,destination:legs.at(-1)?.to||'Your destination',finalWalkLabel:`${prefs.finalWalk} min final walk · estimated`,
+ firstStop:first?.leg.stop.name||'',feedTone:feed.tone,feedLabel:feed.label,feedFreshness:boardFreshness(firstBoard,now),feedIssue:firstBoard?.refreshError,
+ nextArrivals,hasNextArrivals:!!nextArrivals.length,deadlineLabel:lastBoarded?'At stop by':'Leave by',
+ bufferNote:`Leave-by times include your walk and ${prefs.buffer} min to board.`,
+ boards:boardCards,statuses:statuses.map(s=>({name:s.name,status:s.lineStatuses?.map((x:any)=>x.statusSeverityDescription).join(', ')||'Status unavailable',tone:s.lineStatuses?.every((x:any)=>x.statusSeverity===10)?'mint':'amber',reason:s.lineStatuses?.map((x:any)=>x.reason||'').join(' ')||''})),noStatus:!statuses.length,statusMessage:statusError,noSaved:!saved.journeys.length,savedJourneys:saved.journeys.map(j=>({...j,description:`${j.outbound.length} legs to work · ${j.inbound.length} legs going home`})),buffer:pref.buffer,walkSpeed:pref.walkSpeed,finalWalk:pref.finalWalk,walkOptions:[{value:3,label:'Relaxed · 3 km/h'},{value:4.5,label:'Steady · 4.5 km/h'},{value:5.5,label:'Brisk · 5.5 km/h'}],railAvailability:rail?'National Rail: Darwin credentials configured on this server.':'National Rail: live boards require a server-side Darwin access token. TfL feeds work independently.',editorTitle:'Your saved route',editName:edit?.name||'',editOutboundVariant:editDir==='outbound'?'selected':'segment',editInboundVariant:editDir==='inbound'?'selected':'segment',
+ nextTitle:first?(first.leg.mode==='bus'?'Next buses':'Next trains'):'Journey progress',showConnectionPlan:!!first,tripProgress,canUseLocation:boarded.length===0,canUndoBoarding:boarded.length>0,boardLegLabel:first?.leg.mode==='bus'?'I’m on the bus':'I’m on the train',
  builder:{...builder.view,cannotContinue:!builder.view.canContinue},buildingLeg:builder.active,showLegList:!builder.active,
  canReverse:!!edit?.outbound.length,reverseBusy,showEditControls:!reverseBusy,
  needsReturnSetup:edit?.inbound.some(leg=>!leg.rideMinutes),

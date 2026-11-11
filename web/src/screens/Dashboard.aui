@@ -38,35 +38,45 @@ Page Dashboard
           Else
             Link href=$loginURL variant=primary "Sign in with MyAccounts"
       Else
-        Row variant=page-heading
-          Stack gap=sm
-            Text variant=eyebrow "$date · LONDON"
-            Heading level=1 "$title"
-            Text variant=muted "$subtitle"
-          Button intent=refresh variant=quiet icon=refresh disabled=$busy "$refreshLabel"
-        If condition=$example
-          Alert tone=info "Example journey · Real TfL arrivals, with illustrative walking and ride times. Add your own commute to personalise it."
+        If condition=$showPageHeading
+          Row variant=page-heading
+            Stack gap=sm
+              Text variant=eyebrow "$date · LONDON"
+              Heading level=1 "$title"
+              Text variant=muted "$subtitle"
+            Button intent=refresh variant=quiet icon=refresh disabled=$busy "$refreshLabel"
         If condition=$showJourney
-          Row variant=journey-controls
-            Select name=journey value=$journeyId options=$journeyOptions label="Saved journey"
-            Row variant=segmented
-              Button intent=outbound variant=$outboundVariant icon=briefcase "To work"
-              Button intent=inbound variant=$inboundVariant icon=home "Going home"
-          Row variant=location-strip
-            Icon name=map-pin
-            Text "$locationLabel"
-            If condition=$canUseLocation
-              Button intent=locate variant=text "$locationButton"
-          If condition=$directionSuggestion
-            Alert tone=info "$directionSuggestion"
-          If condition=$emptyDirection
-            Card variant=welcome
-              Icon name=route
-              Heading level=2 "Let’s connect your journey"
-              Text "Add the stops and services you use, in travel order. Save each direction separately so you always get the right side of the road."
-              Button intent=edit variant=primary icon=plus "Set up this direction"
-          Else
-            Stack gap=lg
+          Stack variant=journey-overview
+            Row variant=direction-controls
+              Row variant=segmented
+                Button intent=outbound variant=$outboundVariant pressed=$outboundActive icon=briefcase "To work"
+                Button intent=inbound variant=$inboundVariant pressed=$inboundActive icon=home "Going home"
+              Button intent=refresh variant=journey-refresh label=$refreshLabel icon=refresh disabled=$busy
+            If condition=$emptyDirection
+              Card variant=welcome
+                Heading level=1 "Set up this direction"
+                Text "Add the stops and services you use, in travel order."
+                Button intent=edit variant=primary icon=plus "Edit journey"
+            Else
+              Card variant=hero
+                Row variant=spread
+                  If condition=$heroBadge
+                    Badge tone=mint "$heroBadge"
+                  If condition=$example
+                    Text variant=hero-foot "Example journey"
+                Heading level=1 "$heroTitle"
+                If condition=$heroCopy
+                  Text variant=hero-copy "$heroCopy"
+                If condition=$hasRecommendation
+                  Row variant=hero-stats
+                    Stack gap=xs
+                      Text variant=stat-label "$arriveLabel"
+                      Text variant=stat-value "$arriveBy"
+                    Stack gap=xs
+                      Text variant=stat-label "$waitLabel"
+                      Text variant=stat-value "$platformWait"
+                      If condition=$waitStop
+                        Text variant=hero-foot "$waitStop"
               Card variant=trip-quick
                 Row variant=spread
                   Heading level=2 "$nextTitle"
@@ -75,93 +85,76 @@ Page Dashboard
                 If condition=$tripProgress
                   Text variant=connection "$tripProgress"
                 If condition=$showConnectionPlan
-                  Stack gap=sm
-                    Text variant=muted "$firstStop"
-                    If condition=$feedFreshness
-                      Text variant=muted "$feedFreshness"
-                    If condition=$feedIssue
-                      Text variant=muted "$feedIssue"
-                    For each=$nextArrivals
-                      Row variant=arrival
-                        Badge tone=$item.tone "$item.line"
-                        Stack gap=xs
-                          Text variant=strong "$item.destination"
-                          Text variant=muted "$item.detail"
-                        Stack variant=arrival-time
-                          Text variant=countdown "$item.minutes"
-                          Text variant=muted "$item.clock"
-                    If condition=$noNextArrivals
-                      Text variant=empty "$firstBoardMessage"
-                    Row variant=trip-actions gap=sm
-                      Button intent=boardLeg variant=primary "$boardLegLabel"
-                      Button intent=board variant=quiet "See all departures"
+                  Text variant=muted "$firstStop"
+                  If condition=$hasNextArrivals
+                    Stack variant=catchable-list gap=none
+                      Row variant=departure-columns
+                        Text "Departure"
+                        Text "$deadlineLabel"
+                      For each=$nextArrivals
+                        Row variant=$item.variant
+                          Stack gap=xs
+                            Text variant=strong "$item.clock · $item.service"
+                            Text variant=muted "$item.detail"
+                          Text variant=departure-deadline "$item.deadline"
+                  If condition=$feedFreshness
+                    Text variant=muted "$feedFreshness"
+                  If condition=$feedIssue
+                    Text variant=muted "$feedIssue"
+                  Row variant=trip-actions gap=sm
+                    Button intent=boardLeg variant=primary "$boardLegLabel"
+                    Button intent=board variant=quiet "See all departures"
                 If condition=$canUndoBoarding
                   Row variant=trip-actions gap=sm
                     Button intent=undoBoarding variant=quiet "Undo boarding"
                     Button intent=restartTrip variant=quiet "Restart journey"
-                Stack variant=trip-route gap=sm
+          If condition=$hasJourneyChoices
+            Row variant=journey-controls
+              Select name=journey value=$journeyId options=$journeyOptions label="Saved journey"
+          If condition=$example
+            Alert tone=info "Example journey · Real TfL arrivals, with illustrative walking and ride times. Add your own commute to personalise it."
+          Row variant=location-strip
+            Icon name=map-pin
+            Text "$locationLabel"
+            If condition=$canUseLocation
+              Button intent=locate variant=text "$locationButton"
+          If condition=$hasJourneyLegs
+            Grid variant=journey-grid
+              Stack gap=lg
+                Card variant=timeline
+                  Row variant=spread
+                    Heading level=2 "Journey details"
+                    Button intent=edit variant=text icon=pencil "Edit"
                   For each=$steps
-                    Row variant=trip-summary gap=sm
+                    Row variant=step
                       Icon name=$item.icon tone=$item.tone
-                      Text variant=strong "$item.summary"
-                      Text variant=muted "$item.phase"
-              Grid variant=journey-grid
-                Stack gap=lg
-                  If condition=$showConnectionPlan
-                    Card variant=hero
-                      Row variant=spread
-                        Badge tone=mint "$heroBadge"
-                        Icon name=arrow-up-right
-                      Text variant=hero-kicker "$heroKicker"
-                      Heading level=2 "$heroTitle"
-                      Text variant=hero-copy "$heroCopy"
-                      Row variant=hero-stats
-                        Stack gap=xs
-                          Text variant=stat-label "$readyLabel"
-                          Text variant=stat-value "$leaveBy"
-                        Stack gap=xs
-                          Text variant=stat-label "EST. AT DESTINATION"
-                          Text variant=stat-value "$arriveBy"
-                        Stack gap=xs
-                          Text variant=stat-label "PLATFORM WAIT"
-                          Text variant=stat-value "$platformWait"
-                      Text variant=hero-foot "$estimateNote"
-                  Card variant=timeline
-                    Row variant=spread
-                      Heading level=2 "Your journey, connected"
-                      Button intent=edit variant=text icon=pencil "Edit"
-                    For each=$steps
-                      Row variant=step
-                        Icon name=$item.icon tone=$item.tone
-                        Stack gap=sm
-                          Text variant=eyebrow "$item.walkLabel"
-                          Row variant=spread
-                            Heading level=3 "$item.title"
-                            Badge tone=$item.tone "$item.time"
-                          Text variant=muted "$item.detail"
-                          Text variant=connection "$item.connection"
-                          If condition=$item.showStart
-                            Button intent=startHere payload=$item.index variant=text "Start from this stop"
-                    Row variant=destination
-                      Icon name=flag
-                      Stack gap=xs
-                        Text variant=strong "$destination"
-                        Text variant=muted "$finalWalkLabel"
-                Stack gap=lg
-                  Card variant=insight
-                    Icon name=sparkles
-                    Heading level=3 "A little breathing room."
-                    Text "$bufferNote"
-                    Button intent=settings variant=text "Adjust your preferences"
-                  Card variant=data-note
-                    Text variant=eyebrow "LIVE TIMES & PUBLISHED SCHEDULES"
-                    Text "Connections use your walking and ride estimates. Check the vehicle destination and station boards before boarding."
+                      Stack gap=sm
+                        Text variant=eyebrow "$item.walkLabel"
+                        Row variant=spread
+                          Heading level=3 "$item.title"
+                          Badge tone=$item.tone "$item.time"
+                        Text variant=muted "$item.detail"
+                        Text variant=connection "$item.connection"
+                        If condition=$item.showStart
+                          Button intent=startHere payload=$item.index variant=text "Start from this stop"
+                  Row variant=destination
+                    Icon name=flag
+                    Stack gap=xs
+                      Text variant=strong "$destination"
+                      Text variant=muted "$finalWalkLabel"
+              Stack gap=lg
+                Card variant=insight
+                  Heading level=3 "Boarding buffer"
+                  Text "$bufferNote"
+                  Button intent=settings variant=text "Adjust your preferences"
         If condition=$showBoard
+          If condition=$example
+            Alert tone=info "Example journey · Real TfL arrivals, with illustrative walking and ride times. Add your own commute to personalise it."
           Row variant=journey-controls
             Select name=journey value=$journeyId options=$journeyOptions label="Saved journey"
             Row variant=segmented
-              Button intent=outbound variant=$outboundVariant "To work"
-              Button intent=inbound variant=$inboundVariant "Going home"
+              Button intent=outbound variant=$outboundVariant pressed=$outboundActive "To work"
+              Button intent=inbound variant=$inboundVariant pressed=$inboundActive "Going home"
           If condition=$hasBusLegs
             Row variant=segmented
               Button intent=showArrivals variant=$arrivalsVariant "Arrivals"

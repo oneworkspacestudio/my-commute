@@ -23,11 +23,46 @@
 .text--timetable-time{min-width:3.35rem;text-align:center;padding:3px 7px;border-radius:6px;background:#f2f6fc;font-weight:650}
 .stack--leg-card{border:1px solid var(--line);border-radius:12px;padding:14px}.row--leg-actions{flex-wrap:wrap}.row--leg-actions .button{min-height:42px}.button--transport-choice{min-height:74px;justify-content:center;border:1px solid var(--line);background:#f5f8ff}.card--editor .service-choices label{min-width:0;overflow-wrap:anywhere}
 .stack--origin-card{border:1px solid var(--line);border-radius:12px;padding:14px}
-.card--trip-quick .row--arrival{padding:8px 0}
+.stack--journey-overview{gap:12px}
+.row--direction-controls{gap:8px;justify-content:space-between}
+.row--direction-controls .row--segmented{flex:1;max-width:420px;min-width:0}
+.row--direction-controls .row--segmented>.button{flex:1;min-height:44px;white-space:nowrap}
+.button--journey-refresh{background:#fff;border:1px solid var(--line);min-width:44px;padding:10px;flex-shrink:0}
+.card--hero{padding:20px 22px;gap:8px}
+.card--hero>.row--spread:empty{display:none}
+.card--hero>.row--spread .text--hero-foot{margin:0}
+.card--hero h1{font-size:clamp(24px,4vw,36px);max-width:none;letter-spacing:-.035em}
+.card--hero .text--hero-copy{max-width:none;line-height:1.35}
+.row--hero-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding-top:10px;margin-top:4px;gap:12px}
+.row--hero-stats .text--stat-label{font-size:11px;letter-spacing:0}
+.row--hero-stats .text--stat-value{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.row--hero-stats .text--hero-foot{font-size:11px;margin:0;line-height:1.3}
+.card--trip-quick{gap:6px;padding:14px 18px}
+.card--trip-quick>.text--muted{font-size:12px;line-height:1.35}
+.stack--catchable-list{margin:2px 0}
+.row--departure-columns,.row--catchable-departure,.row--catchable-recommended{
+ display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:10px;padding:6px 8px
+}
+.row--departure-columns{color:var(--muted);font-size:11px;font-weight:650;padding-block:2px}
+.row--catchable-recommended{background:#edf3ff;border-radius:8px;color:#183a80}
+.row--catchable-departure+.row--catchable-departure{border-top:1px solid var(--line)}
+.stack--catchable-list .stack{gap:0;overflow-wrap:anywhere}
+.stack--catchable-list .text--strong{font-size:13px;line-height:1.3;font-variant-numeric:tabular-nums}
+.stack--catchable-list .text--muted{font-size:11px;line-height:1.3}
+.text--departure-deadline{font-weight:750;font-size:15px;font-variant-numeric:tabular-nums}
 .row--trip-actions{flex-wrap:wrap}
 .row--trip-actions .button{min-height:42px}
-.stack--trip-route{border-top:1px solid var(--line);padding-top:10px}
-.row--trip-summary{align-items:center;min-width:0;font-size:12px}
-.row--trip-summary .icon{width:16px;flex-shrink:0}
-.row--trip-summary .text--strong{flex:1;min-width:0;overflow-wrap:anywhere}
-.row--trip-summary .text--muted{font-size:11px;text-align:right}
+@media(max-width:760px){
+ .page:has(.stack--journey-overview)>.row--topbar{height:56px;padding-inline:14px}
+ .page:has(.stack--journey-overview)>.row--topbar .text--eyebrow{display:none}
+ .stack--main:has(>.stack--journey-overview){padding:12px 14px 90px;gap:14px}
+ .stack--journey-overview{gap:9px}
+ .row--direction-controls .row--segmented{width:auto;padding:2px}
+ .row--direction-controls .row--segmented>.button{padding:6px;gap:5px}
+ .row--direction-controls .row--segmented .icon{width:17px}
+ .card--hero{padding:13px 15px}
+ .card--hero h1{text-wrap:balance}
+ .card--trip-quick{padding:12px}
+ .row--catchable-departure,.row--catchable-recommended{padding-block:5px}
+ .row--trip-actions .button{font-size:12px;padding:7px 10px}
+}

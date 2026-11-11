@@ -46,6 +46,13 @@ export function fresh(a:Arrival,b:Board,now:number){
  return now-providerAt>=-60_000&&now-providerAt<limit&&now-fetchedAt>=-60_000&&now-fetchedAt<fetchLimit;
 }
 export function candidates(l:Leg,b:Board|undefined,now:number){return (b?.arrivals||[]).filter(a=>matches(a,l)&&Date.parse(a.expectedArrival)>=now).sort((a,b)=>Date.parse(a.expectedArrival)-Date.parse(b.expectedArrival));}
+export function leaveDeadline(arrival:Arrival,walk:number,buffer:number){
+ return Date.parse(arrival.expectedArrival)-(walk+buffer)*60_000;
+}
+export function catchableArrivals(arrivals:Arrival[],board:Board|undefined,readyAt:number,buffer:number,now:number){
+ if(!board||board.error)return [];
+ return arrivals.filter(arrival=>!arrival.cancelled&&fresh(arrival,board,now)&&leaveDeadline(arrival,0,buffer)>=readyAt);
+}
 export type Step={leg:Leg;readyAt:number;walk:number;walkSource?:'live'|'origin';chosen?:Arrival;wait?:number;arriveAt?:number;reason?:string};
 function nearbyWalk(point:Origin|Position|undefined,stop:Stop,speed:number){
  if(!point)return;
@@ -60,7 +67,7 @@ export function connect(legs:Leg[],boards:Record<string,Board>,prefs:Preferences
   const walk=live??saved??leg.walkMinutes;
   const walkSource=live!==undefined?'live':saved!==undefined?'origin':undefined;
   const readyAt=Math.max(now,ready+walk*60000),b=boards[leg.id],all=candidates(leg,b,now);
-  const chosen=!blocked&&b&&!b.error?all.find(a=>!a.cancelled&&fresh(a,b,now)&&Date.parse(a.expectedArrival)>=readyAt+prefs.buffer*60000):undefined;
+  const chosen=blocked?undefined:catchableArrivals(all,b,readyAt,prefs.buffer,now)[0];
   let reason='';
   if(blocked)reason='Waiting for an earlier connection';
   else if(b?.error)reason=b.error;

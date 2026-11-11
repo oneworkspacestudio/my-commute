@@ -57,26 +57,121 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
             </Card>
           ) : (
             <>
-              <Row variant="page-heading">
-                <Stack gap="sm">
-                  <Text variant="eyebrow">{data.date} · LONDON</Text>
-                  <Heading level={1}>{data.title}</Heading>
-                  <Text variant="muted">{data.subtitle}</Text>
-                </Stack>
-                <Button intent="refresh" variant="quiet" icon="refresh" disabled={data.busy}>{data.refreshLabel}</Button>
-              </Row>
-              {data.example && (
-                <Alert tone="info">Example journey · Real TfL arrivals, with illustrative walking and ride times. Add your own commute to personalise it.</Alert>
+              {data.showPageHeading && (
+                <Row variant="page-heading">
+                  <Stack gap="sm">
+                    <Text variant="eyebrow">{data.date} · LONDON</Text>
+                    <Heading level={1}>{data.title}</Heading>
+                    <Text variant="muted">{data.subtitle}</Text>
+                  </Stack>
+                  <Button intent="refresh" variant="quiet" icon="refresh" disabled={data.busy}>{data.refreshLabel}</Button>
+                </Row>
               )}
               {data.showJourney && (
                 <>
-                  <Row variant="journey-controls">
-                    <Select name="journey" value={data.journeyId} options={data.journeyOptions} label="Saved journey" />
-                    <Row variant="segmented">
-                      <Button intent="outbound" variant={data.outboundVariant} icon="briefcase">To work</Button>
-                      <Button intent="inbound" variant={data.inboundVariant} icon="home">Going home</Button>
+                  <Stack variant="journey-overview">
+                    <Row variant="direction-controls">
+                      <Row variant="segmented">
+                        <Button intent="outbound" variant={data.outboundVariant} pressed={data.outboundActive} icon="briefcase">To work</Button>
+                        <Button intent="inbound" variant={data.inboundVariant} pressed={data.inboundActive} icon="home">Going home</Button>
+                      </Row>
+                      <Button intent="refresh" variant="journey-refresh" label={data.refreshLabel} icon="refresh" disabled={data.busy} />
                     </Row>
-                  </Row>
+                    {data.emptyDirection ? (
+                      <Card variant="welcome">
+                        <Heading level={1}>Set up this direction</Heading>
+                        <Text>Add the stops and services you use, in travel order.</Text>
+                        <Button intent="edit" variant="primary" icon="plus">Edit journey</Button>
+                      </Card>
+                    ) : (
+                      <>
+                        <Card variant="hero">
+                          <Row variant="spread">
+                            {data.heroBadge && (
+                              <Badge tone="mint">{data.heroBadge}</Badge>
+                            )}
+                            {data.example && (
+                              <Text variant="hero-foot">Example journey</Text>
+                            )}
+                          </Row>
+                          <Heading level={1}>{data.heroTitle}</Heading>
+                          {data.heroCopy && (
+                            <Text variant="hero-copy">{data.heroCopy}</Text>
+                          )}
+                          {data.hasRecommendation && (
+                            <Row variant="hero-stats">
+                              <Stack gap="xs">
+                                <Text variant="stat-label">{data.arriveLabel}</Text>
+                                <Text variant="stat-value">{data.arriveBy}</Text>
+                              </Stack>
+                              <Stack gap="xs">
+                                <Text variant="stat-label">{data.waitLabel}</Text>
+                                <Text variant="stat-value">{data.platformWait}</Text>
+                                {data.waitStop && (
+                                  <Text variant="hero-foot">{data.waitStop}</Text>
+                                )}
+                              </Stack>
+                            </Row>
+                          )}
+                        </Card>
+                        <Card variant="trip-quick">
+                          <Row variant="spread">
+                            <Heading level={2}>{data.nextTitle}</Heading>
+                            {data.showConnectionPlan && (
+                              <Badge tone={data.feedTone}>{data.feedLabel}</Badge>
+                            )}
+                          </Row>
+                          {data.tripProgress && (
+                            <Text variant="connection">{data.tripProgress}</Text>
+                          )}
+                          {data.showConnectionPlan && (
+                            <>
+                              <Text variant="muted">{data.firstStop}</Text>
+                              {data.hasNextArrivals && (
+                                <Stack variant="catchable-list" gap="none">
+                                  <Row variant="departure-columns">
+                                    <Text>Departure</Text>
+                                    <Text>{data.deadlineLabel}</Text>
+                                  </Row>
+                                  {data.nextArrivals.map((item, i) => (
+                                    <Row key={i} variant={item.variant}>
+                                      <Stack gap="xs">
+                                        <Text variant="strong">{item.clock} · {item.service}</Text>
+                                        <Text variant="muted">{item.detail}</Text>
+                                      </Stack>
+                                      <Text variant="departure-deadline">{item.deadline}</Text>
+                                    </Row>
+                                  ))}
+                                </Stack>
+                              )}
+                              {data.feedFreshness && (
+                                <Text variant="muted">{data.feedFreshness}</Text>
+                              )}
+                              {data.feedIssue && (
+                                <Text variant="muted">{data.feedIssue}</Text>
+                              )}
+                              <Row variant="trip-actions" gap="sm">
+                                <Button intent="boardLeg" variant="primary">{data.boardLegLabel}</Button>
+                                <Button intent="board" variant="quiet">See all departures</Button>
+                              </Row>
+                            </>
+                          )}
+                          {data.canUndoBoarding && (
+                            <Row variant="trip-actions" gap="sm">
+                              <Button intent="undoBoarding" variant="quiet">Undo boarding</Button>
+                              <Button intent="restartTrip" variant="quiet">Restart journey</Button>
+                            </Row>
+                          )}
+                        </Card>
+                      </>
+                    )}
+                  </Stack>
+                  {data.hasJourneyChoices && (
+                    <Row variant="journey-controls"><Select name="journey" value={data.journeyId} options={data.journeyOptions} label="Saved journey" /></Row>
+                  )}
+                  {data.example && (
+                    <Alert tone="info">Example journey · Real TfL arrivals, with illustrative walking and ride times. Add your own commute to personalise it.</Alert>
+                  )}
                   <Row variant="location-strip">
                     <Icon name="map-pin" />
                     <Text>{data.locationLabel}</Text>
@@ -84,158 +179,61 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                       <Button intent="locate" variant="text">{data.locationButton}</Button>
                     )}
                   </Row>
-                  {data.directionSuggestion && (
-                    <Alert tone="info">{data.directionSuggestion}</Alert>
-                  )}
-                  {data.emptyDirection ? (
-                    <Card variant="welcome">
-                      <Icon name="route" />
-                      <Heading level={2}>Let’s connect your journey</Heading>
-                      <Text>Add the stops and services you use, in travel order. Save each direction separately so you always get the right side of the road.</Text>
-                      <Button intent="edit" variant="primary" icon="plus">Set up this direction</Button>
-                    </Card>
-                  ) : (
-                    <Stack gap="lg">
-                      <Card variant="trip-quick">
-                        <Row variant="spread">
-                          <Heading level={2}>{data.nextTitle}</Heading>
-                          {data.showConnectionPlan && (
-                            <Badge tone={data.feedTone}>{data.feedLabel}</Badge>
-                          )}
-                        </Row>
-                        {data.tripProgress && (
-                          <Text variant="connection">{data.tripProgress}</Text>
-                        )}
-                        {data.showConnectionPlan && (
-                          <Stack gap="sm">
-                            <Text variant="muted">{data.firstStop}</Text>
-                            {data.feedFreshness && (
-                              <Text variant="muted">{data.feedFreshness}</Text>
-                            )}
-                            {data.feedIssue && (
-                              <Text variant="muted">{data.feedIssue}</Text>
-                            )}
-                            {data.nextArrivals.map((item, i) => (
-                              <Row key={i} variant="arrival">
-                                <Badge tone={item.tone}>{item.line}</Badge>
-                                <Stack gap="xs">
-                                  <Text variant="strong">{item.destination}</Text>
-                                  <Text variant="muted">{item.detail}</Text>
-                                </Stack>
-                                <Stack variant="arrival-time">
-                                  <Text variant="countdown">{item.minutes}</Text>
-                                  <Text variant="muted">{item.clock}</Text>
-                                </Stack>
-                              </Row>
-                            ))}
-                            {data.noNextArrivals && (
-                              <Text variant="empty">{data.firstBoardMessage}</Text>
-                            )}
-                            <Row variant="trip-actions" gap="sm">
-                              <Button intent="boardLeg" variant="primary">{data.boardLegLabel}</Button>
-                              <Button intent="board" variant="quiet">See all departures</Button>
-                            </Row>
-                          </Stack>
-                        )}
-                        {data.canUndoBoarding && (
-                          <Row variant="trip-actions" gap="sm">
-                            <Button intent="undoBoarding" variant="quiet">Undo boarding</Button>
-                            <Button intent="restartTrip" variant="quiet">Restart journey</Button>
+                  {data.hasJourneyLegs && (
+                    <Grid variant="journey-grid">
+                      <Stack gap="lg">
+                        <Card variant="timeline">
+                          <Row variant="spread">
+                            <Heading level={2}>Journey details</Heading>
+                            <Button intent="edit" variant="text" icon="pencil">Edit</Button>
                           </Row>
-                        )}
-                        <Stack variant="trip-route" gap="sm">
                           {data.steps.map((item, i) => (
-                            <Row key={i} variant="trip-summary" gap="sm">
+                            <Row key={i} variant="step">
                               <Icon name={item.icon} tone={item.tone} />
-                              <Text variant="strong">{item.summary}</Text>
-                              <Text variant="muted">{item.phase}</Text>
-                            </Row>
-                          ))}
-                        </Stack>
-                      </Card>
-                      <Grid variant="journey-grid">
-                        <Stack gap="lg">
-                          {data.showConnectionPlan && (
-                            <Card variant="hero">
-                              <Row variant="spread">
-                                <Badge tone="mint">{data.heroBadge}</Badge>
-                                <Icon name="arrow-up-right" />
-                              </Row>
-                              <Text variant="hero-kicker">{data.heroKicker}</Text>
-                              <Heading level={2}>{data.heroTitle}</Heading>
-                              <Text variant="hero-copy">{data.heroCopy}</Text>
-                              <Row variant="hero-stats">
-                                <Stack gap="xs">
-                                  <Text variant="stat-label">{data.readyLabel}</Text>
-                                  <Text variant="stat-value">{data.leaveBy}</Text>
-                                </Stack>
-                                <Stack gap="xs">
-                                  <Text variant="stat-label">EST. AT DESTINATION</Text>
-                                  <Text variant="stat-value">{data.arriveBy}</Text>
-                                </Stack>
-                                <Stack gap="xs">
-                                  <Text variant="stat-label">PLATFORM WAIT</Text>
-                                  <Text variant="stat-value">{data.platformWait}</Text>
-                                </Stack>
-                              </Row>
-                              <Text variant="hero-foot">{data.estimateNote}</Text>
-                            </Card>
-                          )}
-                          <Card variant="timeline">
-                            <Row variant="spread">
-                              <Heading level={2}>Your journey, connected</Heading>
-                              <Button intent="edit" variant="text" icon="pencil">Edit</Button>
-                            </Row>
-                            {data.steps.map((item, i) => (
-                              <Row key={i} variant="step">
-                                <Icon name={item.icon} tone={item.tone} />
-                                <Stack gap="sm">
-                                  <Text variant="eyebrow">{item.walkLabel}</Text>
-                                  <Row variant="spread">
-                                    <Heading level={3}>{item.title}</Heading>
-                                    <Badge tone={item.tone}>{item.time}</Badge>
-                                  </Row>
-                                  <Text variant="muted">{item.detail}</Text>
-                                  <Text variant="connection">{item.connection}</Text>
-                                  {item.showStart && (
-                                    <Button intent="startHere" payload={item.index} variant="text">Start from this stop</Button>
-                                  )}
-                                </Stack>
-                              </Row>
-                            ))}
-                            <Row variant="destination">
-                              <Icon name="flag" />
-                              <Stack gap="xs">
-                                <Text variant="strong">{data.destination}</Text>
-                                <Text variant="muted">{data.finalWalkLabel}</Text>
+                              <Stack gap="sm">
+                                <Text variant="eyebrow">{item.walkLabel}</Text>
+                                <Row variant="spread">
+                                  <Heading level={3}>{item.title}</Heading>
+                                  <Badge tone={item.tone}>{item.time}</Badge>
+                                </Row>
+                                <Text variant="muted">{item.detail}</Text>
+                                <Text variant="connection">{item.connection}</Text>
+                                {item.showStart && (
+                                  <Button intent="startHere" payload={item.index} variant="text">Start from this stop</Button>
+                                )}
                               </Stack>
                             </Row>
-                          </Card>
-                        </Stack>
-                        <Stack gap="lg">
-                          <Card variant="insight">
-                            <Icon name="sparkles" />
-                            <Heading level={3}>A little breathing room.</Heading>
-                            <Text>{data.bufferNote}</Text>
-                            <Button intent="settings" variant="text">Adjust your preferences</Button>
-                          </Card>
-                          <Card variant="data-note">
-                            <Text variant="eyebrow">LIVE TIMES & PUBLISHED SCHEDULES</Text>
-                            <Text>Connections use your walking and ride estimates. Check the vehicle destination and station boards before boarding.</Text>
-                          </Card>
-                        </Stack>
-                      </Grid>
-                    </Stack>
+                          ))}
+                          <Row variant="destination">
+                            <Icon name="flag" />
+                            <Stack gap="xs">
+                              <Text variant="strong">{data.destination}</Text>
+                              <Text variant="muted">{data.finalWalkLabel}</Text>
+                            </Stack>
+                          </Row>
+                        </Card>
+                      </Stack>
+                      <Stack gap="lg">
+                        <Card variant="insight">
+                          <Heading level={3}>Boarding buffer</Heading>
+                          <Text>{data.bufferNote}</Text>
+                          <Button intent="settings" variant="text">Adjust your preferences</Button>
+                        </Card>
+                      </Stack>
+                    </Grid>
                   )}
                 </>
               )}
               {data.showBoard && (
                 <>
+                  {data.example && (
+                    <Alert tone="info">Example journey · Real TfL arrivals, with illustrative walking and ride times. Add your own commute to personalise it.</Alert>
+                  )}
                   <Row variant="journey-controls">
                     <Select name="journey" value={data.journeyId} options={data.journeyOptions} label="Saved journey" />
                     <Row variant="segmented">
-                      <Button intent="outbound" variant={data.outboundVariant}>To work</Button>
-                      <Button intent="inbound" variant={data.inboundVariant}>Going home</Button>
+                      <Button intent="outbound" variant={data.outboundVariant} pressed={data.outboundActive}>To work</Button>
+                      <Button intent="inbound" variant={data.inboundVariant} pressed={data.inboundActive}>Going home</Button>
                     </Row>
                   </Row>
                   {data.hasBusLegs && (
