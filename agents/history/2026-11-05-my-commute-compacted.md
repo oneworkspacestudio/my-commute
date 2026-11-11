@@ -211,3 +211,21 @@ recovery. The test fixture was stopped and removed.
 
 The ordinary Workspace preview.123 catalog rebuild verified all 44 apps
 and 923 package files. The change shipped through the independent app channel.
+
+## My Commute preview.7 published
+
+The Journey view starts with the direction switch and a compact blue
+recommendation, followed by up to four catchable departures and their
+leave-by times. The full Live board still lists earlier departures.
+
+[Preview.7](https://github.com/oneworkspacestudio/my-commute/releases/tag/v0.1.0-preview.7)
+ships source `0c3c2ef045f4751f67e8ea318c6bbe4bb3ae21ef`. Go tests and vet,
+18 frontend tests and 14 browser scenarios passed. The clean release
+executable passed the three focused native browser scenarios. The mobile
+layout test fits the four departure rows above navigation at 390 × 700.
+
+All nine public assets verified. Channel promotion `670894d` preserved
+292 prior release entries. The anonymous updater selected preview.7 from
+the public Workspace preview.123 baseline, verified 47 owned payloads
+and staged six changed files with other apps and the manager retained.
+The Workspace-2 installation reported My Commute preview.6.
