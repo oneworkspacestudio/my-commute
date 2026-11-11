@@ -193,3 +193,21 @@ The open tab can use its last board if its connection to Workspace drops.
 Passing, cancelled, or unknown-time departures stay ineligible, and the
 planner resumes live predictions after a successful refresh. The cache
 does not synthesize additional departures.
+
+## My Commute preview.6 published
+
+Source `30474dd7c4d632609450a1014e00254110f00514` shipped as
+[preview.6](https://github.com/oneworkspacestudio/my-commute/releases/tag/v0.1.0-preview.6).
+All nine assets and the anonymous archive verified. ZIP SHA256
+`81d1e9b77af432db1aea287b61a5fdbf7842864f185e5d2cff2fda6975391523`.
+Go tests and vet, all 18 frontend tests, and 14 browser scenarios passed,
+including minute refresh, browser outage, departure expiry, and reconnect.
+
+Workspace commit `1f19e55` promoted the pin and channel entry while preserving
+291 earlier entries. The public Workspace preview.123 installer passed
+synthetic preview.5 to preview.6 upgrade, rollback and anonymous public
+reapply. Verified all 47 installed Commute payloads, service health and
+recovery. The test fixture was stopped and removed.
+
+The ordinary Workspace preview.123 catalog rebuild verified all 44 apps
+and 923 package files. The change shipped through the independent app channel.
