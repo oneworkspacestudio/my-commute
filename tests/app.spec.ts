@@ -18,6 +18,47 @@ test('native phone and desktop layouts, saved preferences and logout',async({pag
   return route.fulfill({json:{arrivals:[arrival],fetchedAt:timestamp,source:'Synthetic TfL board'}});
  });
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width:1440,height:1000});await login(page);await expect(page.getByText('Brixton Underground Station',{exact:true}).first()).toBeVisible({timeout:30000});await page.screenshot({path:'docs/screenshots/desktop.png',fullPage:true});await page.setViewportSize({width:390,height:844});await page.screenshot({path:'docs/screenshots/mobile.png',fullPage:true});for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Live',exact:true}).click();await expect(page.getByRole('heading',{name:'Every arrival, in one place.'})).toBeVisible();await expect(page.getByText('Brixton Underground Station').first()).toBeVisible();await page.getByRole('button',{name:'You',exact:true}).click();await page.getByLabel('Boarding safety buffer').fill('3');await page.getByRole('button',{name:'Save preferences',exact:true}).click();await expect(page.getByRole('status')).toContainText('Preferences saved');await page.reload();await page.getByRole('button',{name:'You',exact:true}).click();await expect(page.getByLabel('Boarding safety buffer')).toHaveValue('3');await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByRole('heading',{name:'Your London. Your way.'})).toBeVisible();expect((await page.request.get('/api/state')).status()).toBe(401);expect(errors).toEqual([]);});
+test('minute refresh labels cached departures and estimates through a browser outage',async({page,context})=>{
+ await page.setViewportSize({width:390,height:844});
+ const at=Date.now();
+ await page.clock.install({time:at});
+ let fetchedAt=at,cacheState='live',requests=0;
+ await page.route('**/api/arrivals?*',route=>{
+  requests++;
+  const timestamp=new Date(fetchedAt).toISOString();
+  const arrival={id:'offline-train',lineId:'victoria',lineName:'Victoria',direction:'inbound',
+   destinationName:'Brixton Underground Station',platformName:'Southbound',timestamp,expectedArrival:new Date(at+12*60_000).toISOString()};
+  return route.fulfill({json:{arrivals:[arrival],fetchedAt:timestamp,source:'TfL',cacheState}});
+ });
+ await login(page);
+ const quick=page.locator('.card--trip-quick');
+ await expect(quick.getByText('Live',{exact:true})).toBeVisible();
+ cacheState='cached';
+ await page.clock.fastForward(60_000);
+ await expect(quick.getByText('Cached',{exact:true})).toBeVisible();
+ await expect(quick.getByText(/Cached · fetched 1 min ago/)).toBeVisible();
+ expect(requests).toBe(2);
+
+ await context.setOffline(true);
+ await expect(quick.getByText('Estimated',{exact:true})).toBeVisible();
+ await page.clock.fastForward(2*60_000);
+ await expect(quick.getByText(/Last live fetch 3 min ago · cached estimates/)).toBeVisible();
+ await expect(quick.getByText(/Estimated from cache/)).toBeVisible();
+ await expect(page.getByText('ESTIMATED CONNECTION',{exact:true})).toBeVisible();
+ expect(requests).toBe(2);
+
+ fetchedAt=at+3*60_000;
+ cacheState='live';
+ await context.setOffline(false);
+ await expect(quick.getByText('Live',{exact:true})).toBeVisible();
+ expect(requests).toBe(3);
+ await context.setOffline(true);
+ await expect(quick.getByText('Estimated',{exact:true})).toBeVisible();
+ await page.clock.fastForward(12*60_000);
+ await expect(quick.locator('.row--arrival')).toHaveCount(0);
+ await expect(page.getByText('ESTIMATED CONNECTION',{exact:true})).toHaveCount(0);
+});
+
 async function addVictoriaLeg(page:Page,boarding:string,alighting:string){
  await page.getByRole('button',{name:'Add a leg',exact:true}).click();
  await page.getByRole('button',{name:'Train',exact:true}).click();
@@ -105,7 +146,19 @@ test('reverse a mixed journey using verified return stops and preserve a saved r
  await page.getByRole('button',{name:'Cancel',exact:true}).click();
  expect((await getJourney()).inbound).toEqual(reversed.inbound);
 });
-test('location denial, feed outage, and National Rail missing credentials stay honest',async({page,context})=>{await login(page);await context.clearPermissions();await page.getByRole('button',{name:'Use my location',exact:true}).click();await expect(page.getByText('Location unavailable. Your saved walking times still work.')).toBeVisible({timeout:20000});await page.route('**/api/arrivals?*',r=>r.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'Synthetic feed outage'})}));await page.getByRole('button',{name:'Refresh',exact:true}).click();await expect(page.getByText('Synthetic feed outage').first()).toBeVisible();await expect(page.getByText('YOUR NEXT CONNECTION',{exact:true})).toHaveCount(0);const r=await page.request.get('/api/rail?crs=WAT&to=CLJ');expect(r.status()).toBe(503);expect(await r.text()).toContain('Darwin access token');});
+test('location denial, a cold feed outage, and National Rail missing credentials stay honest',async({page,context})=>{
+ await page.route('**/api/arrivals?*',route=>route.fulfill({status:502,json:{error:'Synthetic feed outage'}}));
+ await login(page);
+ await context.clearPermissions();
+ await page.getByRole('button',{name:'Use my location',exact:true}).click();
+ await expect(page.getByText('Location unavailable. Your saved walking times still work.')).toBeVisible({timeout:20000});
+ await expect(page.getByText('Synthetic feed outage').first()).toBeVisible();
+ await expect(page.getByText('YOUR NEXT CONNECTION',{exact:true})).toHaveCount(0);
+ await expect(page.getByText('ESTIMATED CONNECTION',{exact:true})).toHaveCount(0);
+ const rail=await page.request.get('/api/rail?crs=WAT&to=CLJ');
+ expect(rail.status()).toBe(503);
+ expect(await rail.text()).toContain('Darwin access token');
+});
 test('location selects return direction and respects manual override',async({page,context})=>{await page.setViewportSize({width:390,height:844});await login(page);await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:51.5152,longitude:-.1419,accuracy:10});await page.getByRole('button',{name:'Use my location',exact:true}).click();await expect(page.getByRole('heading',{name:'Let’s get you home.'})).toBeVisible();await page.getByRole('button',{name:'To work',exact:true}).click();await page.getByRole('button',{name:'Update location',exact:true}).click();await expect(page.getByRole('heading',{name:'A smoother way to work.'})).toBeVisible();});
 test('journeys are isolated by account, provider writes require owner and CSRF',async({page,browser})=>{await login(page);const me=await(await page.request.get('/api/me')).json();const origin='http://127.0.0.1:19440';const member='member-'+randomUUID()+'@example.invalid';const created=await page.request.post('/api/local-users',{headers:{Origin:origin,'X-CSRF-Token':me.csrf},data:{email:member,password}});expect(created.status()).toBe(201);const before=await(await page.request.get('/api/state')).json();expect((await page.request.put('/api/state',{headers:{Origin:origin},data:before.state})).status()).toBe(403);const other=await browser.newContext();try{expect((await other.request.post(origin+'/api/login',{headers:{Origin:origin},data:{email:member,password}})).status()).toBe(200);const s=await(await other.request.get(origin+'/api/state')).json();expect(s.state.journeys).toEqual([]);const user=await(await other.request.get(origin+'/api/me')).json();const provider=await other.request.put(origin+'/api/providers',{headers:{Origin:origin,'X-CSRF-Token':user.csrf},data:{tflKey:'synthetic-not-a-token',railToken:''}});expect(provider.status()).toBe(403);expect((await page.request.get('/api/state')).status()).toBe(200);}finally{await other.close();}});
 test('bus to Tube connection carries ride time into platform wait and retains early buses',async({page})=>{

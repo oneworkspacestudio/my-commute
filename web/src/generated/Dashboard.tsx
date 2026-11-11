@@ -109,6 +109,12 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                         {data.showConnectionPlan && (
                           <Stack gap="sm">
                             <Text variant="muted">{data.firstStop}</Text>
+                            {data.feedFreshness && (
+                              <Text variant="muted">{data.feedFreshness}</Text>
+                            )}
+                            {data.feedIssue && (
+                              <Text variant="muted">{data.feedIssue}</Text>
+                            )}
                             {data.nextArrivals.map((item, i) => (
                               <Row key={i} variant="arrival">
                                 <Badge tone={item.tone}>{item.line}</Badge>
@@ -215,7 +221,6 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                           </Card>
                           <Card variant="data-note">
                             <Text variant="eyebrow">LIVE TIMES & PUBLISHED SCHEDULES</Text>
-                            <Text>{data.updatedLabel}</Text>
                             <Text>Connections use your walking and ride estimates. Check the vehicle destination and station boards before boarding.</Text>
                           </Card>
                         </Stack>
@@ -251,6 +256,9 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
                             <Badge tone={item.tone}>{item.state}</Badge>
                           </Row>
                           <Text variant="muted">{item.filter}</Text>
+                          {item.freshness && (
+                            <Text variant="muted">{item.freshness}</Text>
+                          )}
                           {item.rows.map((item, i) => (
                             <Row key={i} variant="arrival">
                               <Badge tone={item.tone}>{item.line}</Badge>
@@ -587,7 +595,7 @@ export function Dashboard({ data, onAction }: { data: any; onAction: (name: stri
               )}
               <Row variant="footer">
                 <Text>My Commute · London</Text>
-                <Text>TfL predictions refresh every 30 seconds while open.</Text>
+                <Text>Departures refresh about once a minute while open.</Text>
               </Row>
             </>
           )}

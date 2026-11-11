@@ -1,11 +1,14 @@
 import {fresh,matches} from './engine.ts';
 import type {Arrival,Board,Leg} from './engine';
+const londonDay=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London'});
 
 // Merge predictions and published times without showing a scheduled duplicate
 // beside its live vehicle, or resurrecting a cancelled service as a fallback.
 export function mergeBusBoards(leg:Leg,live:Board,schedules:Board[],now:number):Board {
  const predictions=live.error?[]:live.arrivals.filter(a=>!a.timetabled&&matches(a,leg)&&fresh(a,live,now));
- const scheduled=schedules.flatMap(b=>b.error?[]:b.arrivals.filter(a=>a.timetabled&&matches(a,leg)&&fresh(a,b,now)));
+ const scheduled=schedules.flatMap(b=>b.error?[]:b.arrivals
+  .filter(a=>a.timetabled&&matches(a,leg)&&fresh(a,b,now))
+  .map(a=>({...a,scheduleFetchedAt:b.fetchedAt,cachedSchedule:b.cacheState==='estimated'})));
  const result:Arrival[]=[...predictions];const ids=new Set<string>();
  for(const a of scheduled){
   const at=Date.parse(a.expectedArrival);if(at<now||!Number.isFinite(at))continue;
@@ -15,8 +18,13 @@ export function mergeBusBoards(leg:Leg,live:Board,schedules:Board[],now:number):
   if(at<=horizon+120000||ids.has(a.id))continue;
   ids.add(a.id);result.push(a);
  }
- const failures=schedules.filter(b=>b.error).map(b=>b.error).join(' ');
- return {arrivals:result.sort((a,b)=>Date.parse(a.expectedArrival)-Date.parse(b.expectedArrival)),fetchedAt:new Date(now).toISOString(),source:'TfL live arrivals + published bus timetables',timetables:schedules.flatMap(b=>b.timetable?[b.timetable]:[]),liveError:live.error,timetableError:failures||undefined,error:!result.length&&live.error&&schedules.every(b=>b.error)?live.error:undefined};
+ const failures=[...new Set(schedules.map(b=>b.error||b.refreshError).filter(Boolean))].join(' ');
+ return {...live,arrivals:result.sort((a,b)=>Date.parse(a.expectedArrival)-Date.parse(b.expectedArrival)),
+  timetables:schedules.flatMap(b=>b.timetable?[{
+   ...b.timetable,
+   todaySchedule:Number.isFinite(Date.parse(b.fetchedAt))&&londonDay.format(new Date(b.fetchedAt))===londonDay.format(now)?b.timetable.todaySchedule:'',
+  }]:[]),liveError:live.error||live.refreshError,
+  timetableError:failures||undefined,error:!result.length&&live.error&&schedules.every(b=>b.error)?live.error:undefined};
 }
 
 export function timetableGroups(schedule:{departures:{time:string;destination:string;minutes:number}[]}) {

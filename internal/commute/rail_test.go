@@ -13,7 +13,7 @@ type transportFunc func(*http.Request) (*http.Response, error)
 
 func (f transportFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 func TestDarwinRequestMatchesPublishedWSDL(t *testing.T) {
-	a := &App{railToken: "synthetic-token", client: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
+	a := &App{railToken: "synthetic-token", slots: make(chan struct{}, 6), client: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
 		if r.Header.Get("SOAPAction") != "http://thalesgroup.com/RTTI/2015-05-14/ldb/GetDepBoardWithDetails" {
 			t.Fatal("SOAP action must use operation's published 2015 namespace")
 		}

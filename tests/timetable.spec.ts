@@ -17,6 +17,9 @@ test('authenticated native bus timetable returns published patterns and enforces
  expect((await request.post('/api/login',{headers:{Origin:origin},data:{email,password}})).status()).toBe(200);
  const response=await request.get('/api/timetable?line=24&stop=490000036S');expect(response.status()).toBe(200);
  const b=await response.json();expect(b.timetable.lineId).toBe('24');expect(b.timetable.schedules.length).toBeGreaterThan(0);expect(b.timetable.schedules.some((s:any)=>s.departures.length)).toBe(true);expect(b.arrivals.every((a:any)=>a.timetabled&&a.status==='Scheduled · not live')).toBe(true);
+ const cached=await(await request.get('/api/timetable?line=24&stop=490000036S')).json();
+ expect(cached.cacheState).toBe('cached');
+ expect(cached.fetchedAt).toBe(b.fetchedAt);
  expect((await request.get('/api/timetable?line=24/evil&stop=490000036S')).status()).toBe(400);
  await writeFile(join(artifacts,'live-timetable-summary.json'),JSON.stringify({passed:true,source:'TfL public route 24 and GOV.UK bank-holiday calendar',patterns:b.timetable.schedules.map((s:any)=>({name:s.name,departures:s.departures.length,frequencyWindows:s.frequencies.length})),automaticPattern:b.timetable.todaySchedule,warning:b.timetable.warning,fallbackDepartures:b.arrivals.length},null,2));
 });

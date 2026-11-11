@@ -85,10 +85,12 @@ type Arrival struct {
 	RideMinutes         float64 `json:"rideMinutes,omitempty"`
 }
 type Board struct {
-	Arrivals  []Arrival     `json:"arrivals"`
-	FetchedAt string        `json:"fetchedAt"`
-	Source    string        `json:"source"`
-	Timetable *BusTimetable `json:"timetable,omitempty"`
+	Arrivals     []Arrival     `json:"arrivals"`
+	FetchedAt    string        `json:"fetchedAt"`
+	Source       string        `json:"source"`
+	Timetable    *BusTimetable `json:"timetable,omitempty"`
+	CacheState   string        `json:"cacheState,omitempty"`
+	RefreshError string        `json:"refreshError,omitempty"`
 }
 type cacheEntry struct {
 	Data []byte
@@ -100,6 +102,8 @@ type App struct {
 	mu                sync.Mutex
 	calendarMu        sync.Mutex
 	cache             map[string]cacheEntry
+	boards            map[string]*boardEntry
+	providerRetry     map[string]time.Time
 	tflKey, railToken string
 	slots             chan struct{}
 }
@@ -181,6 +185,8 @@ func (a *App) putProviders(w http.ResponseWriter, r *http.Request) {
 	}
 	a.tflKey, a.railToken = tk, rt
 	a.cache = map[string]cacheEntry{}
+	a.boards = nil
+	a.providerRetry = nil
 	apphost.JSON(w, 200, map[string]bool{"railConfigured": rt != "", "tflConfigured": tk != ""})
 }
 

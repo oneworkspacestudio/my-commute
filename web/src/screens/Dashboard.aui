@@ -77,6 +77,10 @@ Page Dashboard
                 If condition=$showConnectionPlan
                   Stack gap=sm
                     Text variant=muted "$firstStop"
+                    If condition=$feedFreshness
+                      Text variant=muted "$feedFreshness"
+                    If condition=$feedIssue
+                      Text variant=muted "$feedIssue"
                     For each=$nextArrivals
                       Row variant=arrival
                         Badge tone=$item.tone "$item.line"
@@ -151,7 +155,6 @@ Page Dashboard
                     Button intent=settings variant=text "Adjust your preferences"
                   Card variant=data-note
                     Text variant=eyebrow "LIVE TIMES & PUBLISHED SCHEDULES"
-                    Text "$updatedLabel"
                     Text "Connections use your walking and ride estimates. Check the vehicle destination and station boards before boarding."
         If condition=$showBoard
           Row variant=journey-controls
@@ -173,6 +176,8 @@ Page Dashboard
                       Heading level=2 "$item.name"
                     Badge tone=$item.tone "$item.state"
                   Text variant=muted "$item.filter"
+                  If condition=$item.freshness
+                    Text variant=muted "$item.freshness"
                   For each=$item.rows
                     Row variant=arrival
                       Badge tone=$item.tone "$item.line"
@@ -392,7 +397,7 @@ Page Dashboard
                   Button intent=builderBack variant=quiet "Back"
         Row variant=footer
           Text "My Commute · London"
-          Text "TfL predictions refresh every 30 seconds while open."
+          Text "Departures refresh about once a minute while open."
   Row variant=bottom-nav
     Button intent=today variant=$todayVariant icon=route "Journey"
     Button intent=board variant=$boardVariant icon=clock "Live"

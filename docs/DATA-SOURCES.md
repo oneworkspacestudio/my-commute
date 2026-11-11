@@ -41,8 +41,19 @@ the outward ride estimate when Darwin has no return timing. If there is
 no unique TfL match for every service on a leg, the editor asks the user to
 finish that leg before saving.
 
-Provider predictions older than 120 seconds and boards not fetched within 90
-seconds cannot be recommended. A fetch error invalidates the previous board.
+Open journeys check departures about once a minute. TfL stop boards and
+Darwin station-pair boards share a one-minute cache across sessions.
+Concurrent checks for the same board share one request. Provider rate
+limits pause requests for that provider for at least a minute and respect
+Retry-After. Cached responses retain the time of the original fetch.
+
+Live recommendations require provider predictions younger than 120 seconds
+and a board fetched within 90 seconds. During a failed refresh, the planner
+can use upcoming departures from the last confirmed board for up to 30
+minutes. These appear as cached estimates. The same fallback works if the
+browser loses its connection while the journey is open. A successful refresh
+replaces the estimates. The planner drops departures after their recorded
+time and leaves missing trains or frequency-only services without a time.
 Current location expires after 120 seconds and needs accuracy ≤100 metres.
 For the first walk, the planner prefers a nearby current location, then the
 saved Home or Work point, then the leg's saved walk time. Location-based
@@ -99,7 +110,8 @@ are excluded from automatic recommendations because no offset is supplied.
 Live vehicles take precedence over scheduled departures through the route's live
 prediction horizon plus two minutes. Cancellation times suppress corresponding
 scheduled fallback. Scheduled rows have a separate `timetabled` flag, retain their
-source timestamp and expire for recommendation after 15 minutes. They are labelled
-**Scheduled · not live** in boards and the hero. A scheduled first leg feeds the
+source timestamp. A cached timetable can supply its remaining dated departures
+for up to 24 hours during an outage. They are labelled as scheduled in boards
+and the hero. A scheduled first leg feeds the
 same ride and interchange calculation into later live train choices. Arrival and
 platform-wait estimates state when the journey includes a scheduled bus.

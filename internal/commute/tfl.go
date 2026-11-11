@@ -20,17 +20,32 @@ func (a *App) fetch(ctx context.Context, path string) ([]byte, error) {
 func (a *App) fetchTTL(ctx context.Context, path string, ttl time.Duration) ([]byte, error) {
 	a.mu.Lock()
 	c, ok := a.cache[path]
-	key := a.tflKey
 	a.mu.Unlock()
 	if ok && time.Since(c.At) < ttl {
 		return c.Data, nil
 	}
-	select {
-	case a.slots <- struct{}{}:
-		defer func() { <-a.slots }()
-	case <-ctx.Done():
-		return nil, ctx.Err()
+	raw, err := a.fetchTFL(ctx, path)
+	if err != nil {
+		return nil, err
 	}
+	a.mu.Lock()
+	if len(a.cache) > 256 {
+		a.cache = map[string]cacheEntry{}
+	}
+	a.cache[path] = cacheEntry{raw, time.Now()}
+	a.mu.Unlock()
+	return raw, nil
+}
+
+func (a *App) fetchTFL(ctx context.Context, path string) ([]byte, error) {
+	release, err := a.providerSlot(ctx, "TfL")
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	a.mu.Lock()
+	key := a.tflKey
+	a.mu.Unlock()
 	u, _ := url.Parse("https://api.tfl.gov.uk" + path)
 	if key != "" {
 		q := u.Query()
@@ -44,8 +59,8 @@ func (a *App) fetchTTL(ctx context.Context, path string, ttl time.Duration) ([]b
 		return nil, errors.New("TfL could not be reached. Please retry")
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 429 {
-		return nil, errors.New("TfL request limit reached. Try again shortly")
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return nil, a.rateLimited("TfL", resp)
 	}
 	if resp.StatusCode != 200 {
 		return nil, errors.New("TfL predictions are temporarily unavailable")
@@ -54,12 +69,6 @@ func (a *App) fetchTTL(ctx context.Context, path string, ttl time.Duration) ([]b
 	if e != nil || !json.Valid(raw) {
 		return nil, errors.New("TfL returned an incomplete response")
 	}
-	a.mu.Lock()
-	if len(a.cache) > 256 {
-		a.cache = map[string]cacheEntry{}
-	}
-	a.cache[path] = cacheEntry{raw, time.Now()}
-	a.mu.Unlock()
 	return raw, nil
 }
 
@@ -182,21 +191,26 @@ func (a *App) arrivals(w http.ResponseWriter, r *http.Request) {
 		apphost.Problem(w, 400, "Invalid stop")
 		return
 	}
-	raw, e := a.fetch(r.Context(), "/StopPoint/"+id+"/Arrivals")
+	board, e := a.cachedBoard(r.Context(), "arrivals:"+id, liveRefresh, predictionRetention, func(ctx context.Context) (Board, error) {
+		raw, err := a.fetchTFL(ctx, "/StopPoint/"+id+"/Arrivals")
+		if err != nil {
+			return Board{}, err
+		}
+		arr := []Arrival{}
+		if json.Unmarshal(raw, &arr) != nil || arr == nil {
+			return Board{}, errors.New("Arrival predictions could not be read")
+		}
+		sort.Slice(arr, func(i, j int) bool { return arr[i].ExpectedArrival < arr[j].ExpectedArrival })
+		return Board{Arrivals: arr, Source: "TfL"}, nil
+	})
 	if e != nil {
 		apphost.Problem(w, 502, e.Error())
 		return
 	}
-	arr := []Arrival{}
-	if json.Unmarshal(raw, &arr) != nil {
-		apphost.Problem(w, 502, "Arrival predictions could not be read")
-		return
-	}
-	sort.Slice(arr, func(i, j int) bool { return arr[i].ExpectedArrival < arr[j].ExpectedArrival })
-	apphost.JSON(w, 200, Board{Arrivals: arr, FetchedAt: time.Now().UTC().Format(time.RFC3339), Source: "TfL"})
+	apphost.JSON(w, 200, board)
 }
 func (a *App) status(w http.ResponseWriter, r *http.Request) {
-	raw, e := a.fetch(r.Context(), "/Line/Mode/tube,overground,elizabeth-line,dlr/Status")
+	raw, e := a.fetchTTL(r.Context(), "/Line/Mode/tube,overground,elizabeth-line,dlr/Status", liveRefresh)
 	if e != nil {
 		apphost.Problem(w, 502, e.Error())
 		return

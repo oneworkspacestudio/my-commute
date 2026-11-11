@@ -2,6 +2,7 @@ package commute
 
 import (
 	"bytes"
+	"context"
 	"encoding/xml"
 	"errors"
 	"github.com/oneworkspacestudio/one-workspace/pkg/apphost"
@@ -140,29 +141,40 @@ func (a *App) rail(w http.ResponseWriter, r *http.Request) {
 		apphost.Problem(w, 400, "Choose different three-letter departure and destination CRS codes")
 		return
 	}
-	body := `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="http://thalesgroup.com/RTTI/2013-11-28/Token/types" xmlns:ldb="http://thalesgroup.com/RTTI/2021-11-01/ldb/"><soap:Header><typ:AccessToken><typ:TokenValue>` + xmlText(token) + `</typ:TokenValue></typ:AccessToken></soap:Header><soap:Body><ldb:GetDepBoardWithDetailsRequest><ldb:numRows>9</ldb:numRows><ldb:crs>` + crs + `</ldb:crs><ldb:filterCrs>` + to + `</ldb:filterCrs><ldb:filterType>to</ldb:filterType><ldb:timeOffset>0</ldb:timeOffset><ldb:timeWindow>119</ldb:timeWindow></ldb:GetDepBoardWithDetailsRequest></soap:Body></soap:Envelope>`
-	req, _ := http.NewRequestWithContext(r.Context(), "POST", "https://lite.realtime.nationalrail.co.uk/OpenLDBWS/ldb12.asmx", strings.NewReader(body))
-	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
-	req.Header.Set("SOAPAction", "http://thalesgroup.com/RTTI/2015-05-14/ldb/GetDepBoardWithDetails")
-	resp, err := a.client.Do(req)
-	if err != nil {
-		apphost.Problem(w, 502, "National Rail is temporarily unreachable")
-		return
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		apphost.Problem(w, 502, "National Rail refused the request. Check the server token or try later")
-		return
-	}
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
-	if err != nil {
-		apphost.Problem(w, 502, "National Rail returned an incomplete response")
-		return
-	}
-	b, err := parseRail(raw, to)
+	board, err := a.cachedBoard(r.Context(), "rail:"+crs+":"+to, liveRefresh, predictionRetention, func(ctx context.Context) (Board, error) {
+		return a.fetchRail(ctx, crs, to, token)
+	})
 	if err != nil {
 		apphost.Problem(w, 502, err.Error())
 		return
 	}
-	apphost.JSON(w, 200, b)
+	apphost.JSON(w, 200, board)
+}
+
+func (a *App) fetchRail(ctx context.Context, crs, to, token string) (Board, error) {
+	release, err := a.providerSlot(ctx, "National Rail")
+	if err != nil {
+		return Board{}, err
+	}
+	defer release()
+	body := `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="http://thalesgroup.com/RTTI/2013-11-28/Token/types" xmlns:ldb="http://thalesgroup.com/RTTI/2021-11-01/ldb/"><soap:Header><typ:AccessToken><typ:TokenValue>` + xmlText(token) + `</typ:TokenValue></typ:AccessToken></soap:Header><soap:Body><ldb:GetDepBoardWithDetailsRequest><ldb:numRows>9</ldb:numRows><ldb:crs>` + crs + `</ldb:crs><ldb:filterCrs>` + to + `</ldb:filterCrs><ldb:filterType>to</ldb:filterType><ldb:timeOffset>0</ldb:timeOffset><ldb:timeWindow>119</ldb:timeWindow></ldb:GetDepBoardWithDetailsRequest></soap:Body></soap:Envelope>`
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://lite.realtime.nationalrail.co.uk/OpenLDBWS/ldb12.asmx", strings.NewReader(body))
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
+	req.Header.Set("SOAPAction", "http://thalesgroup.com/RTTI/2015-05-14/ldb/GetDepBoardWithDetails")
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return Board{}, errors.New("National Rail is temporarily unreachable")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return Board{}, a.rateLimited("National Rail", resp)
+	}
+	if resp.StatusCode != 200 {
+		return Board{}, errors.New("National Rail refused the request. Check the server token or try later")
+	}
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+	if err != nil {
+		return Board{}, errors.New("National Rail returned an incomplete response")
+	}
+	return parseRail(raw, to)
 }

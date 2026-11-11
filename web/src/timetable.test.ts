@@ -8,6 +8,20 @@ test('live vehicles replace scheduled duplicates while later scheduled services 
 test('feed outage uses a labelled scheduled bus and carries its ride into the next connection',()=>{const b=mergeBusBoards(leg,board([],'Offline'),[board([arrival(8,{timetabled:true})])],now);const second={...leg,id:'second',mode:'tube' as const,walkMinutes:3};const s=connect([leg,second],{[leg.id]:b,second:board([arrival(35)])},defaults,now);assert.equal(s[0].chosen?.timetabled,true);assert.equal(s[1].chosen?.id,'35');assert.equal(b.liveError,'Offline');});
 test('stale timetable and wrong-direction services cannot supply a fallback',()=>{const b=mergeBusBoards(leg,board([],'Offline'),[board([arrival(8,{timetabled:true,timestamp:new Date(now-901000).toISOString()}),arrival(9,{timetabled:true,direction:'outbound'})])],now);assert.equal(connect([leg],{[leg.id]:b},defaults,now)[0].chosen,undefined);});
 test('cancelled live service cannot return as a scheduled bus',()=>{const b=mergeBusBoards(leg,board([arrival(10,{cancelled:true})]),[board([arrival(10,{timetabled:true}),arrival(30,{timetabled:true})])],now);assert.equal(connect([leg],{[leg.id]:b},defaults,now)[0].chosen?.id,'30');});
+test('an outage keeps known bus predictions and cached schedules at their original ages',()=>{
+ const predictionTime=new Date(now-3*60_000).toISOString();
+ const scheduleTime=new Date(now-20*60_000).toISOString();
+ const live={...board([arrival(10,{timestamp:predictionTime}),arrival(12,{timestamp:predictionTime,cancelled:true})]),
+  fetchedAt:predictionTime,cacheState:'estimated' as const};
+ const schedule={...board([arrival(12,{timestamp:scheduleTime,timetabled:true}),arrival(30,{timestamp:scheduleTime,timetabled:true})]),
+  fetchedAt:scheduleTime,cacheState:'estimated' as const};
+ const merged=mergeBusBoards(leg,live,[schedule],now);
+ assert.equal(merged.fetchedAt,predictionTime);
+ assert.equal(merged.arrivals.find(service=>service.id==='30')?.scheduleFetchedAt,scheduleTime);
+ assert.equal(merged.arrivals.filter(service=>service.id==='12').length,1);
+ assert.equal(connect([leg],{[leg.id]:merged},defaults,now)[0].chosen?.id,'10');
+ assert.equal(connect([leg],{[leg.id]:merged},defaults,now+11*60_000)[0].chosen?.id,'30');
+});
 test('frequency windows remain separate and destination groups retain full chronological times',()=>{
  const b=mergeBusBoards(leg,board([]),[board([])],now);
  assert.equal(b.arrivals.length,0);

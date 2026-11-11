@@ -178,3 +178,18 @@ receipt matched. The synthetic fixture was stopped and removed.
 The ordinary build used the public Workspace preview.122 catalog baseline
 while preview.123 was in preparation. Verified 43 apps and all 918 payloads
 in the rebuilt bundle. This delivery was an app-only release.
+
+## Departure caching and outage estimates
+
+The app checks departures about once a minute. Shared TfL stop and
+Darwin station-pair boards coalesce concurrent requests and retain their
+original fetch time. Provider rate limits pause requests per provider and
+honor Retry-After. The Journey and Live views show Live, Cached, Estimated,
+or Scheduled and include the age of the data.
+
+During an outage the planner can use last-known upcoming predictions for
+30 minutes and remaining dated published bus times for up to 24 hours.
+The open tab can use its last board if its connection to Workspace drops.
+Passing, cancelled, or unknown-time departures stay ineligible, and the
+planner resumes live predictions after a successful refresh. The cache
+does not synthesize additional departures.

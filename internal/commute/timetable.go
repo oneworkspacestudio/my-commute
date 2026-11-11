@@ -1,6 +1,7 @@
 package commute
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -174,7 +175,7 @@ func chooseSchedule(t BusTimetable, d time.Time, holidays map[string]bool) *BusS
 
 // GOV.UK supplies England/Wales bank holidays. A failed calendar lookup disables
 // automatic fallback rather than applying an ordinary weekday on a special date.
-func (a *App) bankHolidays(r *http.Request) map[string]bool {
+func (a *App) bankHolidays(ctx context.Context) map[string]bool {
 	a.calendarMu.Lock()
 	defer a.calendarMu.Unlock()
 	const key = "england-bank-holidays"
@@ -183,7 +184,7 @@ func (a *App) bankHolidays(r *http.Request) map[string]bool {
 	a.mu.Unlock()
 	raw := cached.Data
 	if !ok || time.Since(cached.At) > 6*time.Hour {
-		req, e := http.NewRequestWithContext(r.Context(), "GET", "https://www.gov.uk/bank-holidays.json", nil)
+		req, e := http.NewRequestWithContext(ctx, "GET", "https://www.gov.uk/bank-holidays.json", nil)
 		if e != nil {
 			return nil
 		}
@@ -276,17 +277,22 @@ func (a *App) busTimetable(w http.ResponseWriter, r *http.Request) {
 		apphost.Problem(w, 400, "Choose one bus route and its boarding stop")
 		return
 	}
-	raw, e := a.fetchTTL(r.Context(), "/Line/"+line+"/Timetable/"+stop, 15*time.Minute)
-	if e != nil {
-		apphost.Problem(w, 502, "Bus timetable unavailable. Live arrivals are independent; retry shortly.")
-		return
-	}
-	t, e := parseBusTimetable(raw, line, stop)
+	board, e := a.cachedBoard(r.Context(), "timetable:"+line+":"+stop, timetableRefresh, timetableRetention, func(ctx context.Context) (Board, error) {
+		raw, err := a.fetchTFL(ctx, "/Line/"+line+"/Timetable/"+stop)
+		if err != nil {
+			return Board{}, fmt.Errorf("Bus timetable unavailable: %w", err)
+		}
+		timetable, err := parseBusTimetable(raw, line, stop)
+		if err != nil {
+			return Board{}, err
+		}
+		holidays := a.bankHolidays(ctx)
+		arrivals := timetableArrivals(&timetable, time.Now(), holidays)
+		return Board{Arrivals: arrivals, Source: "TfL published bus timetable", Timetable: &timetable}, nil
+	})
 	if e != nil {
 		apphost.Problem(w, 502, e.Error())
 		return
 	}
-	now := time.Now()
-	arr := timetableArrivals(&t, now, a.bankHolidays(r))
-	apphost.JSON(w, 200, Board{Arrivals: arr, FetchedAt: now.UTC().Format(time.RFC3339), Source: "TfL published bus timetable", Timetable: &t})
+	apphost.JSON(w, 200, board)
 }

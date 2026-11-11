@@ -6,10 +6,10 @@ export type Origin={lat:number;lon:number;source:'location'|'postcode'};
 export type Journey={id:string;name:string;outbound:Leg[];inbound:Leg[];home?:Origin;work?:Origin};
 export type Preferences={buffer:number;walkSpeed:number;finalWalk:number};
 export type Saved={journeys:Journey[];preferences:Preferences};
-export type Arrival={id:string;lineId:string;lineName:string;destinationName:string;destinationNaptanId?:string;direction:string;platformName:string;expectedArrival:string;timestamp:string;cancelled?:boolean;scheduled?:string;status?:string;timetabled?:boolean;rideMinutes?:number};
+export type Arrival={id:string;lineId:string;lineName:string;destinationName:string;destinationNaptanId?:string;direction:string;platformName:string;expectedArrival:string;timestamp:string;cancelled?:boolean;scheduled?:string;status?:string;timetabled?:boolean;rideMinutes?:number;scheduleFetchedAt?:string;cachedSchedule?:boolean};
 export type BusSchedule={name:string;departures:{time:string;destination:string;minutes:number}[];frequencies:string[]};
 export type BusTimetable={lineId:string;lineName:string;direction:string;schedules:BusSchedule[];todaySchedule:string;warning:string};
-export type Board={arrivals:Arrival[];fetchedAt:string;error?:string;source:string;timetable?:BusTimetable;timetables?:BusTimetable[];liveError?:string;timetableError?:string};
+export type Board={arrivals:Arrival[];fetchedAt:string;error?:string;source:string;cacheState?:'live'|'cached'|'estimated';refreshError?:string;timetable?:BusTimetable;timetables?:BusTimetable[];liveError?:string;timetableError?:string};
 export type Position={lat:number;lon:number;accuracy:number;at:number};
 export function distance(a:{lat:number;lon:number},b:{lat:number;lon:number}){const r=Math.PI/180, dlat=(b.lat-a.lat)*r,dlon=(b.lon-a.lon)*r;return 6371000*2*Math.asin(Math.sqrt(Math.sin(dlat/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlon/2)**2));}
 export function usablePosition(p:Position|undefined,now:number){return !!p&&now-p.at<120000&&p.accuracy<=100;}
@@ -36,7 +36,15 @@ export function rideTime(l:Leg,a:Arrival){
  const durations=l.services?.filter(s=>serviceMatches(a,s)).map(s=>s.minutes)||[];
  return durations.length?Math.max(...durations):l.rideSource==='National Rail timetable'&&a.rideMinutes?a.rideMinutes:l.rideMinutes;
 }
-export function fresh(a:Arrival,b:Board,now:number){const t=Date.parse(a.timestamp),f=Date.parse(b.fetchedAt);return Number.isFinite(t)&&Number.isFinite(f)&&now-t<(a.timetabled?900000:120000)&&now-t>=-60000&&now-f<(a.timetabled?900000:90000);}
+export const predictionRetention=30*60_000;
+export const timetableRetention=24*60*60_000;
+export function fresh(a:Arrival,b:Board,now:number){
+ const providerAt=Date.parse(a.timestamp),fetchedAt=Date.parse(a.scheduleFetchedAt??b.fetchedAt);
+ const estimate=a.timetabled?a.cachedSchedule??b.cacheState==='estimated':b.cacheState==='estimated';
+ const limit=estimate?(a.timetabled?timetableRetention:predictionRetention):a.timetabled?15*60_000:120_000;
+ const fetchLimit=estimate||a.timetabled?limit:90_000;
+ return now-providerAt>=-60_000&&now-providerAt<limit&&now-fetchedAt>=-60_000&&now-fetchedAt<fetchLimit;
+}
 export function candidates(l:Leg,b:Board|undefined,now:number){return (b?.arrivals||[]).filter(a=>matches(a,l)&&Date.parse(a.expectedArrival)>=now).sort((a,b)=>Date.parse(a.expectedArrival)-Date.parse(b.expectedArrival));}
 export type Step={leg:Leg;readyAt:number;walk:number;walkSource?:'live'|'origin';chosen?:Arrival;wait?:number;arriveAt?:number;reason?:string};
 function nearbyWalk(point:Origin|Position|undefined,stop:Stop,speed:number){
